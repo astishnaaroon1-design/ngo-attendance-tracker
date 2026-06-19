@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { Playfair_Display, Inter } from 'next/font/google';
 
-// Load our display and body fonts natively to avoid layout shifts or CDN lag
+// 1. IMPORT the newly installed PixelBlast component from your shadcn folder.
+// (If your components folder is in a different location, adjust this path accordingly)
+import PixelBlast from '@/components/ui/pixel-blast';
+
 const playfair = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -15,9 +18,29 @@ const inter = Inter({
 
 export default function Home() {
   return (
-    <div className={`${inter.className} min-h-screen flex flex-col items-center justify-between p-6 sm:p-12 md:p-24 bg-[#000000] text-[#ffffff] antialiased`}>
-      {/* MainContent */}
-      <main className="w-full max-w-4xl flex flex-col items-center space-y-16 my-auto">
+    // Note: We changed this container to "relative overflow-hidden" to keep the background pixels contained
+    <div className={`${inter.className} relative min-h-screen overflow-hidden flex flex-col items-center justify-between p-6 sm:p-12 md:p-24 bg-[#000000] text-[#ffffff] antialiased`}>
+      
+      {/* 2. THE BACKGROUND LAYER: Renders behind all content */}
+      <div className="absolute inset-0 z-0">
+        <PixelBlast
+          variant="circle"
+          pixelSize={5}
+          color="#cc9166" // Replaced purple with your theme's Ember Gold for editorial coherence!
+          patternScale={0.75}
+          patternDensity={0.45}
+          enableRipples
+          rippleSpeed={0.3}
+          rippleThickness={0.1}
+          rippleIntensityScale={1}
+          speed={0.2}
+          transparent
+          edgeFade={0.19}
+        />
+      </div>
+
+      {/* 3. THE CONTENT LAYER: Renders safely on top of the background */}
+      <main className="relative z-10 w-full max-w-4xl flex flex-col items-center space-y-16 my-auto">
         
         {/* HeroSection */}
         <section className="flex flex-col items-center text-center space-y-8 w-full">
@@ -92,8 +115,8 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-24 pt-8 w-full border-t border-[#2e3038] text-center">
+      {/* Footer Layer */}
+      <footer className="relative z-10 mt-24 pt-8 w-full border-t border-[#2e3038] text-center">
         <p className="text-[12px] text-[#5e616e]">
           © 2026 NGO Attendance Tracker. All rights reserved.
         </p>

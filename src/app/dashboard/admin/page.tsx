@@ -59,6 +59,13 @@ export default function AdminPanel() {
   const [editNotes, setEditingNotes] = useState('');
   const [editDate, setEditingDate] = useState('');
 
+  // Individual Employee Manual Report States
+  const [reportEmployee, setReportEmployee] = useState<any | null>(null);
+  const [reportStartDate, setReportStartDate] = useState<string>('');
+  const [reportEndDate, setReportEndDate] = useState<string>('');
+  const [reportFormat, setReportFormat] = useState<'csv' | 'pdf'>('pdf');
+  const [generatingReport, setGeneratingReport] = useState<boolean>(false);
+
   // Automated Admin Check-In Popup States
   const [showAdminCheckInModal, setShowAdminCheckInModal] = useState<boolean>(false);
   const [adminStatus, setAdminStatus] = useState<string>('');
@@ -165,7 +172,7 @@ export default function AdminPanel() {
       const client = getSupabaseClient(token);
       const { data } = await client
         .from('attendance_records')
-        .select('*, profiles(first_name, last_name, department)')
+        .select('*, profiles(first_name, last_name, email, department)')
         .order('created_at', { ascending: false });
       if (data) setAttendance(data);
     } catch (err) {
@@ -318,6 +325,180 @@ export default function AdminPanel() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Start Individual Report Dialog Setup
+  const handleOpenIndividualReportModal = (emp: any) => {
+    setReportEmployee(emp);
+    const today = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    setReportStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+    setReportEndDate(today);
+    setReportFormat('pdf');
+  };
+
+  // Handle Export of Custom Date-Range Individual Employee Report (PDF or CSV)
+  const handleGenerateIndividualReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportEmployee) return;
+
+    try {
+      setGeneratingReport(true);
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+
+      // Query database for this specific employee across chosen date range
+      const { data: records, error } = await client
+        .from('attendance_records')
+        .select('*')
+        .eq('profile_id', reportEmployee.id)
+        .gte('date', reportStartDate)
+        .lte('date', reportEndDate)
+        .order('date', { ascending: true });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (reportFormat === 'csv') {
+        // Export individual data as CSV
+        let headers = ['Date', 'Status', 'In Time', 'Out Time', 'Is Late', 'Out of Geofence', 'Notes'];
+        let rows = (records || []).map(rec => [
+          rec.date,
+          rec.status,
+          rec.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString() : '',
+          rec.check_out_time ? new Date(rec.check_out_time).toLocaleTimeString() : '',
+          rec.is_late ? 'YES' : 'NO',
+          rec.is_out_of_geofence ? 'YES' : 'NO',
+          rec.notes || ''
+        ]);
+
+        let csvContent = "data:text/csv;charset=utf-8," 
+          + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `NGO_Report_${reportEmployee.first_name}_${reportEmployee.last_name}_${reportStartDate}_to_${reportEndDate}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Export individual data as beautifully designed PDF (using print view)
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          alert('Please allow popups to open individual PDF reports.');
+          return;
+        }
+
+        const totalLogs = records.length;
+        const breaches = records.filter(r => r.is_out_of_geofence).length;
+        const lates = records.filter(r => r.is_late).length;
+        const fields = records.filter(r => r.status === 'Field Visit').length;
+
+        let rowsHtml = records.map(rec => `
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">${rec.date}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${rec.status}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_out_time ? new Date(rec.check_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 220px; word-break: break-all;">${rec.notes || '-'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">${rec.is_late ? 'Late' : 'On-Time'}</td>
+          </tr>
+        `).join('');
+
+        const documentContent = `
+          <html>
+            <head>
+              <title>Staff Ledger: ${reportEmployee.first_name} ${reportEmployee.last_name}</title>
+              <style>
+                body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; padding: 24px; background: #fff; }
+                .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 24px; }
+                h1 { font-size: 20px; font-weight: 900; color: #0f172a; margin: 0; }
+                p { font-size: 11px; color: #64748b; margin-top: 4px; }
+                .grid-stats { display: grid; grid-template-cols: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+                .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+                .stat-title { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; tracking-spacing: 1px; }
+                .stat-value { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 6px; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th { text-align: left; padding: 10px; background: #f1f5f9; color: #475569; font-weight: 800; text-transform: uppercase; font-size: 8px; border-bottom: 2px solid #cbd5e1; }
+                footer { position: fixed; bottom: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #94a3b8; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <div>
+                  <h1 style="font-size: 18px;">Staff Performance Ledger</h1>
+                  <p style="margin: 4px 0 0 0;">Employee: <strong>${reportEmployee.first_name} ${reportEmployee.last_name}</strong> (${reportEmployee.email})</p>
+                  <p style="margin: 2px 0 0 0;">Department: ${reportEmployee.department || 'General'} | Range Selected: ${reportStartDate} to ${reportEndDate}</p>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: 900; color: #059669; font-size: 12px;">NGO Attendance Portal</div>
+                  <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Verifiable Cloud Records</div>
+                </div>
+              </div>
+
+              <div class="grid-stats">
+                <div class="stat-card">
+                  <div class="stat-title">Total Days Logged</div>
+                  <div class="stat-value">${totalLogs}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title">Boundary Breaches</div>
+                  <div class="stat-value">${breaches}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title">Late Arrivals</div>
+                  <div class="stat-value">${lates}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-title">Field Visits</div>
+                  <div class="stat-value">${fields}</div>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>In Time</th>
+                    <th>Out Time</th>
+                    <th>Notes / Explanation</th>
+                    <th>Geofence</th>
+                    <th>Punctuality</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml || '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">No logs recorded for this period.</td></tr>'}
+                </tbody>
+              </table>
+
+              <footer>
+                <span>Generated from Secure cloud ledger. Confidential Internal Report.</span>
+                <span>Page 1 of 1</span>
+              </footer>
+
+              <script>
+                window.onload = function() {
+                  window.print();
+                }
+              </script>
+            </body>
+          </html>
+        `;
+        printWindow.document.write(documentContent);
+        printWindow.document.close();
+      }
+
+      setReportEmployee(null); // Close modal
+    } catch (err: any) {
+      alert('Failed to generate report: ' + err.message);
+    } finally {
+      setGeneratingReport(false);
     }
   };
 
@@ -490,137 +671,6 @@ export default function AdminPanel() {
     document.body.removeChild(link);
   };
 
-  // Highly Elegant Client-Side PDF Generator utilizing native browser print formatting
-  const handleExportPDF = (type: 'daily' | 'weekly' | 'monthly') => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow popups to generate secure PDF reports.');
-      return;
-    }
-
-    const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    let title = `NGO Daily Summary Report`;
-    let records = [...attendance];
-
-    if (type === 'daily') {
-      const todayDateStr = new Date().toISOString().split('T')[0];
-      records = attendance.filter(r => r.date === todayDateStr);
-    } else if (type === 'weekly') {
-      title = `NGO Weekly Attendance Report`;
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      records = attendance.filter(r => new Date(r.date) >= sevenDaysAgo);
-    } else if (type === 'monthly') {
-      title = `NGO Monthly Attendance Ledger`;
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      records = attendance.filter(r => new Date(r.date) >= thirtyDaysAgo);
-    }
-
-    let rowsHtml = records.map(rec => `
-      <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">
-          ${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}
-        </td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #475569;">${rec.profiles?.department || 'General'}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${rec.date}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${rec.status}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 180px; word-break: break-all;">
-          ${rec.notes || '-'}
-        </td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">
-          ${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}
-        </td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">
-          ${rec.is_late ? 'Late Arrival' : 'On-Time'}
-        </td>
-      </tr>
-    `).join('');
-
-    const documentContent = `
-      <html>
-        <head>
-          <title>${title}</title>
-          <style>
-            body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; padding: 24px; background: #fff; }
-            header { display: flex; justify-between: space-between; align-items: center; border-b: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; }
-            h1 { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0; }
-            p { font-size: 12px; color: #64748b; margin-top: 4px; }
-            .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
-            .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
-            .stat-title { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; tracking-spacing: 1px; }
-            .stat-value { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 6px; }
-            table { width: 100%; border-collapse: collapse; font-size: 11px; }
-            th { text-align: left; padding: 10px; background: #f1f5f9; color: #475569; font-weight: 800; text-transform: uppercase; font-size: 8px; border-bottom: 2px solid #cbd5e1; }
-            footer { position: fixed; bottom: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #94a3b8; }
-          </style>
-        </head>
-        <body>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 24px;">
-            <div>
-              <h1 style="font-size: 20px; font-weight: 900; color: #1e293b;">${title}</h1>
-              <p style="margin: 4px 0 0 0; color: #64748b;">NGO Attendance Verification Registry | Generated on ${todayStr}</p>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-weight: 900; color: #059669; font-size: 12px;">NGO Attendance Portal</div>
-              <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Verifiable Cloud Records</div>
-            </div>
-          </div>
-
-          <div class="grid-stats">
-            <div class="stat-card">
-              <div class="stat-title">Total Logs</div>
-              <div class="stat-value">${records.length}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-title">Boundary Breaches</div>
-              <div class="stat-value">${records.filter(r => r.is_out_of_geofence).length}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-title">Late Arrivals</div>
-              <div class="stat-value">${records.filter(r => r.is_late).length}</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-title">Field Visits</div>
-              <div class="stat-value">${records.filter(r => r.status === 'Field Visit').length}</div>
-            </div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Employee Name</th>
-                <th>Department</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Notes / Reason</th>
-                <th>Geofence</th>
-                <th>Punctuality</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml || '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">No logs recorded for this period.</td></tr>'}
-            </tbody>
-          </table>
-
-          <footer>
-            <span>NGO Attendance Master Registry Report. Confidential.</span>
-            <span>Page 1 of 1</span>
-          </footer>
-
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(documentContent);
-    printWindow.document.close();
-  };
-
   // Calculate stats for Today
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecords = attendance.filter(r => r.date === todayStr);
@@ -671,7 +721,7 @@ export default function AdminPanel() {
             Employee Portal
           </a>
           <SignOutButton>
-            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-xs">
+            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-sm">
               Sign Out
             </button>
           </SignOutButton>
@@ -817,6 +867,89 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={() => setEditingRecord(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* INDIVIDUAL EMPLOYEE MANUAL DATE RANGE REPORT MODAL */}
+      {reportEmployee && (
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleGenerateIndividualReport} className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-800">Generate Staff Report</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Creating manual date ledger for {reportEmployee.first_name} {reportEmployee.last_name}</p>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col space-y-1">
+                  <label className="font-semibold text-slate-600">Start Date</label>
+                  <input 
+                    type="date"
+                    value={reportStartDate}
+                    onChange={(e) => setReportStartDate(e.target.value)}
+                    required
+                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="font-semibold text-slate-600">End Date</label>
+                  <input 
+                    type="date"
+                    value={reportEndDate}
+                    onChange={(e) => setReportEndDate(e.target.value)}
+                    required
+                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="font-semibold text-slate-600">Export Format</label>
+                <div className="flex border border-slate-200 rounded-lg overflow-hidden font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setReportFormat('pdf')}
+                    className={`flex-1 py-2 text-center transition-all ${
+                      reportFormat === 'pdf' 
+                        ? 'bg-slate-900 text-white' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    Printable PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportFormat('csv')}
+                    className={`flex-1 py-2 text-center transition-all ${
+                      reportFormat === 'csv' 
+                        ? 'bg-slate-900 text-white' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    CSV File
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 text-xs font-semibold pt-2">
+              <button
+                type="submit"
+                disabled={generatingReport}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all shadow flex items-center justify-center gap-1.5"
+              >
+                {generatingReport && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Generate Export</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportEmployee(null)}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl transition-all"
               >
                 Cancel
@@ -1116,6 +1249,7 @@ export default function AdminPanel() {
                         <th className="py-3">Department</th>
                         <th className="py-3">Role</th>
                         <th className="py-3">Status</th>
+                        <th className="py-3 text-center">Reports (Range)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -1131,6 +1265,15 @@ export default function AdminPanel() {
                           </td>
                           <td className="py-3">
                             <span className="text-emerald-600 font-semibold">Active</span>
+                          </td>
+                          <td className="py-3 text-center">
+                            <button
+                              onClick={() => handleOpenIndividualReportModal(p)}
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1 px-3 rounded text-[10px] inline-flex items-center space-x-1"
+                            >
+                              <Printer className="w-3 h-3 text-emerald-600" />
+                              <span>Generate Report</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1296,7 +1439,7 @@ export default function AdminPanel() {
                 </table>
               </div>
 
-              {/* HIGHLY ELEGANT TABLE PAGINATION CONTROLS */}
+              {/* TABLE PAGINATION CONTROLS */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-semibold text-slate-500">
                   <span>

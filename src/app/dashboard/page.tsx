@@ -49,9 +49,14 @@ export default function EmployeeDashboard() {
   // Helper to ensure a profile exists in Supabase before logging attendance
   const ensureProfileExists = async () => {
     if (!user) return;
+    const email = user.primaryEmailAddress?.emailAddress || '';
+    
+    // Automatically make 'astishna09@gmail.com' the admin, others become employees
+    const designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'employee';
+
     const { data, error } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, role')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -60,16 +65,19 @@ export default function EmployeeDashboard() {
     }
 
     if (!data) {
-      // Create profile row on the fly
+      // Create profile row on-the-fly with the automated role assignment
       await supabase.from('profiles').insert({
         id: user.id,
-        email: user.primaryEmailAddress?.emailAddress || '',
+        email: email,
         first_name: user.firstName || '',
         last_name: user.lastName || '',
-        role: 'employee',
+        role: designatedRole,
         department: 'General',
         is_active: true,
       });
+    } else if (data.role !== designatedRole) {
+      // Safeguard: If the role in database is outdated, sync it on-the-fly
+      await supabase.from('profiles').update({ role: designatedRole }).eq('id', user.id);
     }
   };
 

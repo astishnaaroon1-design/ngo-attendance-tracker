@@ -405,7 +405,7 @@ export default function AdminPanel() {
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_out_time ? new Date(rec.check_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 220px; word-break: break-all;">${rec.notes || '-'}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">${rec.is_out_of_geofence ? 'Breach' : 'OK'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">${rec.is_late ? 'Late' : 'On-Time'}</td>
           </tr>
         `).join('');
@@ -671,6 +671,137 @@ export default function AdminPanel() {
     document.body.removeChild(link);
   };
 
+  // Global PDF Exporter for Daily, Weekly, and Monthly logs
+  const handleExportPDF = (type: 'daily' | 'weekly' | 'monthly') => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to generate secure PDF reports.');
+      return;
+    }
+
+    const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let title = `NGO Daily Summary Report`;
+    let records = [...attendance];
+
+    if (type === 'daily') {
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      records = attendance.filter(r => r.date === todayDateStr);
+    } else if (type === 'weekly') {
+      title = `NGO Weekly Attendance Report`;
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      records = attendance.filter(r => new Date(r.date) >= sevenDaysAgo);
+    } else if (type === 'monthly') {
+      title = `NGO Monthly Attendance Ledger`;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      records = attendance.filter(r => new Date(r.date) >= thirtyDaysAgo);
+    }
+
+    let rowsHtml = records.map(rec => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">
+          ${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #475569;">${rec.profiles?.department || 'General'}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${rec.date}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${rec.status}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 180px; word-break: break-all;">
+          ${rec.notes || '-'}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">
+          ${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">
+          ${rec.is_late ? 'Late Arrival' : 'On-Time'}
+        </td>
+      </tr>
+    `).join('');
+
+    const documentContent = `
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; padding: 24px; background: #fff; }
+            header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 16px; margin-bottom: 24px; }
+            h1 { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0; }
+            p { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .grid-stats { display: grid; grid-template-cols: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+            .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+            .stat-title { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; tracking-spacing: 1px; }
+            .stat-value { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 6px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th { text-align: left; padding: 10px; background: #f1f5f9; color: #475569; font-weight: 800; text-transform: uppercase; font-size: 8px; border-bottom: 2px solid #cbd5e1; }
+            footer { position: fixed; bottom: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #94a3b8; }
+          </style>
+        </head>
+        <body>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 24px;">
+            <div>
+              <h1 style="font-size: 20px; font-weight: 900; color: #1e293b;">${title}</h1>
+              <p style="margin: 4px 0 0 0; color: #64748b;">NGO Attendance Verification Registry | Generated on ${todayStr}</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 900; color: #059669; font-size: 12px;">NGO Attendance Portal</div>
+              <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Verifiable Cloud Records</div>
+            </div>
+          </div>
+
+          <div class="grid-stats">
+            <div class="stat-card">
+              <div class="stat-title">Total Logs</div>
+              <div class="stat-value">${records.length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Boundary Breaches</div>
+              <div class="stat-value">${records.filter(r => r.is_out_of_geofence).length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Late Arrivals</div>
+              <div class="stat-value">${records.filter(r => r.is_late).length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Field Visits</div>
+              <div class="stat-value">${records.filter(r => r.status === 'Field Visit').length}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Department</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Notes / Reason</th>
+                <th>Geofence</th>
+                <th>Punctuality</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">No logs recorded for this period.</td></tr>'}
+            </tbody>
+          </table>
+
+          <footer>
+            <span>NGO Attendance Master Registry Report. Confidential.</span>
+            <span>Page 1 of 1</span>
+          </footer>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(documentContent);
+    printWindow.document.close();
+  };
+
   // Calculate stats for Today
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecords = attendance.filter(r => r.date === todayStr);
@@ -721,7 +852,7 @@ export default function AdminPanel() {
             Employee Portal
           </a>
           <SignOutButton>
-            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-sm">
+            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-xs">
               Sign Out
             </button>
           </SignOutButton>

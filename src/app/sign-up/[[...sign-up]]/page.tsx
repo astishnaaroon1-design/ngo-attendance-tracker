@@ -13,26 +13,24 @@ export default function SignUpPage() {
         </div>
         <h2 className="text-lg font-medium text-[#f4f0ff] tracking-tight mb-6">Create NGO Account</h2>
         
-        {/* Securely mapped Clerk form elements matching Reflect design system */}
         <SignUp 
           appearance={{
+            variables: {
+              colorPrimary: "#9382ff", // Lavender Accent!
+              colorBackground: "#060317", // Midnight Surface!
+              colorForeground: "#f4f0ff", // Replaced colorText with colorForeground
+              colorMutedForeground: "#a8a6b7", // Replaced colorTextSecondary with colorMutedForeground
+              colorInput: "#030014", // Replaced colorInputBackground with colorInput
+              colorInputForeground: "#ffffff", // Replaced colorInputText with colorInputForeground
+              borderRadius: "5px", // Reflect button/input radius!
+            },
             elements: {
-              footer: "hidden", // Completely hides the "Powered by Clerk" watermark!
+              footer: "hidden", // Completely hides the bottom copyright footer!
               cardBox: "bg-transparent shadow-none border-none",
-              card: "bg-[#060317]/95 border border-[#2e3038]/40 rounded-[24px] shadow-2xl p-6",
-              headerTitle: "text-white text-lg font-medium tracking-tight",
-              headerSubtitle: "text-[#9194a1] text-xs leading-relaxed",
-              formButtonPrimary: "bg-[#10093a] border border-[#9382ff]/40 text-[#f4f0ff] hover:bg-[#9382ff]/20 rounded-[5px] text-xs font-semibold py-3 shadow transition-all duration-200",
-              formFieldInput: "bg-[#08080a] border border-[#2e3038]/80 text-white rounded-[5px] text-xs py-2.5 focus:ring-1 focus:ring-[#9382ff]",
-              formFieldLabel: "text-[#9194a1] text-xs font-semibold mb-1",
-              socialButtonsBlockButton: "bg-[#08080a] border border-[#2e3038] hover:bg-[#1c1d22] text-[#e2e3e9] rounded-[5px] text-xs font-semibold py-2.5 transition-all duration-200",
-              socialButtonsBlockButtonText: "text-[#e2e3e9] font-semibold",
+              card: "border border-[#2e3038]/40 rounded-[16px] shadow-2xl p-6",
+              socialButtonsBlockButton: "bg-[#030014] border border-[#2e3038] hover:bg-[#121317] text-[#e2e3e9] rounded-[5px] transition-all duration-200",
+              formFieldInput: "bg-[#030014] border border-[#2e3038] text-white rounded-[5px]",
               dividerLine: "bg-[#2e3038]/60",
-              dividerText: "text-[#5e616e]",
-              formFieldSuccessText: "text-emerald-500",
-              formFieldErrorText: "text-rose-500",
-              identityPreviewText: "text-[#9194a1]",
-              identityPreviewEditButton: "text-[#9382ff] hover:text-[#f4f0ff]",
             }
           }}
         />

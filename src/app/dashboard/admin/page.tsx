@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton } from '@clerk/nextjs';
+import { useUser, SignOutButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
+import { getSupabaseClient } from '../../lib/supabase';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
   Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck 
@@ -11,6 +11,7 @@ import {
 
 export default function AdminPanel() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth(); // Clerk helper to fetch our secure Supabase token
   const router = useRouter();
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -68,14 +69,17 @@ export default function AdminPanel() {
       
       const designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'employee';
 
-      let { data: profile, error: profError } = await supabase
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+
+      let { data: profile, error: profError } = await client
         .from('profiles')
         .select('role')
         .eq('id', user?.id)
         .maybeSingle();
 
       if (!profile) {
-        await supabase.from('profiles').insert({
+        await client.from('profiles').insert({
           id: user?.id,
           email: email,
           first_name: user?.firstName || '',
@@ -87,7 +91,7 @@ export default function AdminPanel() {
         profile = { role: designatedRole };
       } else if (email.toLowerCase() === 'astishna09@gmail.com' && profile.role !== 'admin') {
         // Enforce main admin elevation
-        await supabase.from('profiles').update({ role: 'admin' }).eq('id', user?.id);
+        await client.from('profiles').update({ role: 'admin' }).eq('id', user?.id);
         profile.role = 'admin';
       }
 
@@ -108,90 +112,132 @@ export default function AdminPanel() {
       ]);
 
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching admin data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchProfiles = async () => {
-    const { data } = await supabase.from('profiles').select('*').order('last_name', { ascending: true });
-    if (data) setProfiles(data);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { data } = await client.from('profiles').select('*').order('last_name', { ascending: true });
+      if (data) setProfiles(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchAttendance = async () => {
-    const { data } = await supabase
-      .from('attendance_records')
-      .select('*, profiles(first_name, last_name, department)')
-      .order('created_at', { ascending: false });
-    if (data) setAttendance(data);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { data } = await client
+        .from('attendance_records')
+        .select('*, profiles(first_name, last_name, department)')
+        .order('created_at', { ascending: false });
+      if (data) setAttendance(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from('geofence_settings').select('*').eq('id', 1).single();
-    if (data) {
-      setSettings(data);
-      setOfficeLat(data.latitude.toString());
-      setOfficeLng(data.longitude.toString());
-      setRadius(data.radius_meters.toString());
-      setStartTime(data.official_start_time);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { data } = await client.from('geofence_settings').select('*').eq('id', 1).single();
+      if (data) {
+        setSettings(data);
+        setOfficeLat(data.latitude.toString());
+        setOfficeLng(data.longitude.toString());
+        setRadius(data.radius_meters.toString());
+        setStartTime(data.official_start_time);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const fetchNotifications = async () => {
-    const { data } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
-    if (data) setNotifications(data);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { data } = await client.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
+      if (data) setNotifications(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Approve a pending admin
   const handleApproveAdmin = async (profileId: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: 'admin' })
-      .eq('id', profileId);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { error } = await client
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', profileId);
 
-    if (!error) {
-      alert('Administrator request approved successfully.');
-      fetchProfiles();
-    } else {
-      alert('Failed to approve request: ' + error.message);
+      if (!error) {
+        alert('Administrator request approved successfully.');
+        fetchProfiles();
+      } else {
+        alert('Failed to approve request: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   // Reject / Downgrade to standard employee
   const handleRejectAdmin = async (profileId: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: 'employee' })
-      .eq('id', profileId);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { error } = await client
+        .from('profiles')
+        .update({ role: 'employee' })
+        .eq('id', profileId);
 
-    if (!error) {
-      alert('User set to Employee role successfully.');
-      fetchProfiles();
-    } else {
-      alert('Failed to adjust role: ' + error.message);
+      if (!error) {
+        alert('User set to Employee role successfully.');
+        fetchProfiles();
+      } else {
+        alert('Failed to adjust role: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   // Update Settings
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase
-      .from('geofence_settings')
-      .update({
-        latitude: parseFloat(officeLat),
-        longitude: parseFloat(officeLng),
-        radius_meters: parseFloat(radius),
-        official_start_time: startTime,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', 1);
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { error } = await client
+        .from('geofence_settings')
+        .update({
+          latitude: parseFloat(officeLat),
+          longitude: parseFloat(officeLng),
+          radius_meters: parseFloat(radius),
+          official_start_time: startTime,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
 
-    if (!error) {
-      alert('Geofence and office configurations updated successfully.');
-      fetchSettings();
-    } else {
-      alert('Failed to update configurations: ' + error.message);
+      if (!error) {
+        alert('Geofence and office configurations updated successfully.');
+        fetchSettings();
+      } else {
+        alert('Failed to update configurations: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -203,27 +249,33 @@ export default function AdminPanel() {
       return;
     }
 
-    const { error } = await supabase.from('profiles').insert({
-      id: newEmpId,
-      email: newEmpEmail,
-      first_name: newEmpFirst,
-      last_name: newEmpLast,
-      role: newEmpRole,
-      department: newEmpDept,
-      is_active: true
-    });
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { error } = await client.from('profiles').insert({
+        id: newEmpId,
+        email: newEmpEmail,
+        first_name: newEmpFirst,
+        last_name: newEmpLast,
+        role: newEmpRole,
+        department: newEmpDept,
+        is_active: true
+      });
 
-    if (!error) {
-      alert('Profile registered successfully.');
-      setShowAddEmp(false);
-      setNewEmpId('');
-      setNewEmpEmail('');
-      setNewEmpFirst('');
-      setNewEmpLast('');
-      setNewEmpDept('');
-      fetchProfiles();
-    } else {
-      alert('Error registering profile: ' + error.message);
+      if (!error) {
+        alert('Profile registered successfully.');
+        setShowAddEmp(false);
+        setNewEmpId('');
+        setNewEmpEmail('');
+        setNewEmpFirst('');
+        setNewEmpLast('');
+        setNewEmpDept('');
+        fetchProfiles();
+      } else {
+        alert('Error registering profile: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -235,23 +287,29 @@ export default function AdminPanel() {
       return;
     }
 
-    const now = new Date();
-    const { error } = await supabase.from('attendance_records').insert({
-      profile_id: manualProfileId,
-      status: manualStatus,
-      notes: manualNotes + ' (Logged Manually by Administrator)',
-      date: attendanceFilterDate,
-      check_in_time: manualStatus === 'Check-In' ? now.toISOString() : null,
-      check_out_time: manualStatus === 'Check-Out' ? now.toISOString() : null,
-    });
+    try {
+      const now = new Date();
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      const { error } = await client.from('attendance_records').insert({
+        profile_id: manualProfileId,
+        status: manualStatus,
+        notes: manualNotes + ' (Logged Manually by Administrator)',
+        date: attendanceFilterDate,
+        check_in_time: manualStatus === 'Check-In' ? now.toISOString() : null,
+        check_out_time: manualStatus === 'Check-Out' ? now.toISOString() : null,
+      });
 
-    if (!error) {
-      alert('Manual entry logged successfully.');
-      setShowManualLog(false);
-      setManualNotes('');
-      fetchAttendance();
-    } else {
-      alert('Error logging entry: ' + error.message);
+      if (!error) {
+        alert('Manual entry logged successfully.');
+        setShowManualLog(false);
+        setManualNotes('');
+        fetchAttendance();
+      } else {
+        alert('Error logging entry: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -312,15 +370,15 @@ export default function AdminPanel() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
         <AlertTriangle className="w-16 h-16 text-rose-500 mb-4" />
         <h1 className="text-2xl font-black text-slate-800">Access Restricted</h1>
-        <p className="text-slate-600 mt-2 max-w-sm">
+        <p className="text-slate-600 mt-2 max-w-sm text-sm">
           Your credentials do not carry Admin privileges. Please contact the NGO Administration team to elevate your profile.
         </p>
         <div className="mt-6 flex gap-4">
-          <a href="/dashboard" className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-sm">
+          <a href="/dashboard" className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-xs">
             Employee Portal
           </a>
           <SignOutButton>
-            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-sm">
+            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-xs">
               Sign Out
             </button>
           </SignOutButton>

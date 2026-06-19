@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton } from '@clerk/nextjs';
+import { useUser, SignOutButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../lib/supabase';
+import { getSupabaseClient } from '../lib/supabase';
 import { calculateDistance, checkIfLate } from '../lib/geofence';
 import { MapPin, CheckCircle, ShieldAlert, LogOut, Loader2, Calendar, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function EmployeeDashboard() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth(); // Clerk helper to fetch our secure Supabase token
   const router = useRouter();
   
   const [profileRole, setProfileRole] = useState<string | null>(null);
@@ -48,14 +49,21 @@ export default function EmployeeDashboard() {
 
   const fetchUserHistory = async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('attendance_records')
-      .select('*')
-      .eq('profile_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
 
-    if (!error && data) {
-      setHistory(data);
+      const { data, error } = await client
+        .from('attendance_records')
+        .select('*')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setHistory(data);
+      }
+    } catch (err) {
+      console.error('Error loading history:', err);
     }
   };
 
@@ -68,35 +76,42 @@ export default function EmployeeDashboard() {
     
     let designatedRole = 'employee';
     if (selectedRole === 'admin') {
-      // Only 'astishna09@gmail.com' becomes Admin instantly, others become pending_admin
       designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'pending_admin';
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('id', user.id)
-      .maybeSingle();
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
 
-    if (!data) {
-      // Create profile row on the fly
-      await supabase.from('profiles').insert({
-        id: user.id,
-        email: email,
-        first_name: user.firstName || '',
-        last_name: user.lastName || '',
-        role: designatedRole,
-        department: 'General',
-        is_active: true,
-      });
-      return designatedRole;
-    } else {
-      // Safe check: Ensure astishna09@gmail.com is always elevated to admin automatically
-      if (email.toLowerCase() === 'astishna09@gmail.com' && data.role !== 'admin') {
-        await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
-        return 'admin';
+      const { data, error } = await client
+        .from('profiles')
+        .select('id, role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!data) {
+        // Create profile row on the fly
+        await client.from('profiles').insert({
+          id: user.id,
+          email: email,
+          first_name: user.firstName || '',
+          last_name: user.lastName || '',
+          role: designatedRole,
+          department: 'General',
+          is_active: true,
+        });
+        return designatedRole;
+      } else {
+        // Safe check: Ensure astishna09@gmail.com is always elevated to admin automatically
+        if (email.toLowerCase() === 'astishna09@gmail.com' && data.role !== 'admin') {
+          await client.from('profiles').update({ role: 'admin' }).eq('id', user.id);
+          return 'admin';
+        }
+        return data.role;
       }
-      return data.role;
+    } catch (err) {
+      console.error('Profile synchronization error:', err);
+      return 'employee';
     }
   };
 
@@ -130,7 +145,10 @@ export default function EmployeeDashboard() {
       const { latitude, longitude, accuracy } = position.coords;
       setLocationStatus('GPS signal locked successfully.');
 
-      const { data: config } = await supabase
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+
+      const { data: config } = await client
         .from('geofence_settings')
         .select('*')
         .eq('id', 1)
@@ -167,10 +185,10 @@ export default function EmployeeDashboard() {
         recordPayload.check_out_lng = longitude;
       }
 
-      await supabase.from('attendance_records').insert([recordPayload]);
+      await client.from('attendance_records').insert([recordPayload]);
 
       if (isLate) {
-        await supabase.from('notifications').insert({
+        await client.from('notifications').insert({
           profile_id: user?.id,
           type: 'late_checkin',
           title: 'Late Arrival Logged',
@@ -179,7 +197,7 @@ export default function EmployeeDashboard() {
       }
 
       if (finalGeofenceAlert) {
-        await supabase.from('notifications').insert({
+        await client.from('notifications').insert({
           profile_id: user?.id,
           type: 'out_of_geofence',
           title: 'Out of Geofence Check-in',
@@ -210,7 +228,7 @@ export default function EmployeeDashboard() {
     }
   };
 
-  // 3. SHOW Friendly Status screen while loading or checking roles
+  // While loading or redirecting, show a friendly status screen
   if (!isLoaded || !user || !profileRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -222,7 +240,7 @@ export default function EmployeeDashboard() {
     );
   }
 
-  // 4. SHOW Awaiting Admin Approval page if pending_admin
+  // Awaiting Admin Approval screen
   if (profileRole === 'pending_admin') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
@@ -251,7 +269,6 @@ export default function EmployeeDashboard() {
     );
   }
 
-  // 5. SHOW Employee Dashboard if role is standard employee
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-12">
       {/* Navbar Header */}
@@ -315,7 +332,7 @@ export default function EmployeeDashboard() {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Examples: Sick description, specific project site field name..."
+                placeholder="Examples: Sick description, specific project site field name, leave justification..."
                 rows={3}
                 className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
               />

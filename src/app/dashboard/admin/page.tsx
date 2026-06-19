@@ -7,7 +7,7 @@ import { getSupabaseClient } from '../../lib/supabase';
 import { logAttendanceAction } from '../../actions/attendance';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
-  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2 
+  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2, Printer, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -26,9 +26,11 @@ export default function AdminPanel() {
   const [settings, setSettings] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
 
-  // Search/Filters
+  // Search, Filters & Pagination States
   const [searchQuery, setSearchQuery] = useState('');
   const [attendanceFilterDate, setAttendanceFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 50;
 
   // Form States (Settings edit)
   const [officeLat, setOfficeLat] = useState('');
@@ -50,6 +52,12 @@ export default function AdminPanel() {
   const [manualProfileId, setManualProfileId] = useState('');
   const [manualStatus, setManualStatus] = useState('Check-In');
   const [manualNotes, setManualNotes] = useState('');
+
+  // Form States (Editing Existing Attendance Log)
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [editStatus, setEditingStatus] = useState('');
+  const [editNotes, setEditingNotes] = useState('');
+  const [editDate, setEditingDate] = useState('');
 
   // Automated Admin Check-In Popup States
   const [showAdminCheckInModal, setShowAdminCheckInModal] = useState<boolean>(false);
@@ -249,6 +257,70 @@ export default function AdminPanel() {
     }
   };
 
+  // Edit existing record triggers
+  const startEditingRecord = (record: any) => {
+    setEditingRecord(record);
+    setEditingStatus(record.status);
+    setEditingNotes(record.notes || '');
+    setEditingDate(record.date);
+  };
+
+  // Submit corrected attendance row
+  const handleUpdateRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRecord) return;
+
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      
+      const { error } = await client
+        .from('attendance_records')
+        .update({
+          status: editStatus,
+          notes: editNotes + ' (Edited by Admin)',
+          date: editDate
+        })
+        .eq('id', editingRecord.id);
+
+      if (!error) {
+        alert('Attendance log corrected successfully.');
+        setEditingRecord(null);
+        fetchAttendance();
+      } else {
+        alert('Failed to correct log: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Delete attendance row
+  const handleDeleteRecord = async (id: string) => {
+    if (!confirm('Are you absolutely sure you want to permanently delete this attendance log? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const client = getSupabaseClient(token);
+      
+      const { error } = await client
+        .from('attendance_records')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        alert('Attendance log deleted successfully.');
+        fetchAttendance();
+      } else {
+        alert('Failed to delete log: ' + error.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Approve a pending admin
   const handleApproveAdmin = async (profileId: string) => {
     try {
@@ -418,6 +490,137 @@ export default function AdminPanel() {
     document.body.removeChild(link);
   };
 
+  // Highly Elegant Client-Side PDF Generator utilizing native browser print formatting
+  const handleExportPDF = (type: 'daily' | 'weekly' | 'monthly') => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to generate secure PDF reports.');
+      return;
+    }
+
+    const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let title = `NGO Daily Summary Report`;
+    let records = [...attendance];
+
+    if (type === 'daily') {
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      records = attendance.filter(r => r.date === todayDateStr);
+    } else if (type === 'weekly') {
+      title = `NGO Weekly Attendance Report`;
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      records = attendance.filter(r => new Date(r.date) >= sevenDaysAgo);
+    } else if (type === 'monthly') {
+      title = `NGO Monthly Attendance Ledger`;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      records = attendance.filter(r => new Date(r.date) >= thirtyDaysAgo);
+    }
+
+    let rowsHtml = records.map(rec => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">
+          ${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #475569;">${rec.profiles?.department || 'General'}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${rec.date}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${rec.status}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 180px; word-break: break-all;">
+          ${rec.notes || '-'}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">
+          ${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">
+          ${rec.is_late ? 'Late Arrival' : 'On-Time'}
+        </td>
+      </tr>
+    `).join('');
+
+    const documentContent = `
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; padding: 24px; background: #fff; }
+            header { display: flex; justify-between: space-between; align-items: center; border-b: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; }
+            h1 { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0; }
+            p { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+            .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+            .stat-title { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #64748b; tracking-spacing: 1px; }
+            .stat-value { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 6px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th { text-align: left; padding: 10px; background: #f1f5f9; color: #475569; font-weight: 800; text-transform: uppercase; font-size: 8px; border-bottom: 2px solid #cbd5e1; }
+            footer { position: fixed; bottom: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8px; color: #94a3b8; }
+          </style>
+        </head>
+        <body>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 24px;">
+            <div>
+              <h1 style="font-size: 20px; font-weight: 900; color: #1e293b;">${title}</h1>
+              <p style="margin: 4px 0 0 0; color: #64748b;">NGO Attendance Verification Registry | Generated on ${todayStr}</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 900; color: #059669; font-size: 12px;">NGO Attendance Portal</div>
+              <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Verifiable Cloud Records</div>
+            </div>
+          </div>
+
+          <div class="grid-stats">
+            <div class="stat-card">
+              <div class="stat-title">Total Logs</div>
+              <div class="stat-value">${records.length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Boundary Breaches</div>
+              <div class="stat-value">${records.filter(r => r.is_out_of_geofence).length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Late Arrivals</div>
+              <div class="stat-value">${records.filter(r => r.is_late).length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Field Visits</div>
+              <div class="stat-value">${records.filter(r => r.status === 'Field Visit').length}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Department</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Notes / Reason</th>
+                <th>Geofence</th>
+                <th>Punctuality</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">No logs recorded for this period.</td></tr>'}
+            </tbody>
+          </table>
+
+          <footer>
+            <span>NGO Attendance Master Registry Report. Confidential.</span>
+            <span>Page 1 of 1</span>
+          </footer>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(documentContent);
+    printWindow.document.close();
+  };
+
   // Calculate stats for Today
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecords = attendance.filter(r => r.date === todayStr);
@@ -430,6 +633,18 @@ export default function AdminPanel() {
   // Separate Pending Admins
   const pendingAdmins = profiles.filter(p => p.role === 'pending_admin');
   const activeProfiles = profiles.filter(p => p.role !== 'pending_admin');
+
+  // Filter attendance logs by query
+  const filteredAttendance = attendance.filter(rec => {
+    const name = `${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}`.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return name.includes(query) || rec.status.toLowerCase().includes(query) || (rec.notes && rec.notes.toLowerCase().includes(query));
+  });
+
+  // Paginate filtered results
+  const totalPages = Math.ceil(filteredAttendance.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedAttendance = filteredAttendance.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // While loading, show a friendly status screen
   if (!isLoaded || !user || loading) {
@@ -538,6 +753,76 @@ export default function AdminPanel() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL POPUP FOR ADMIN TO CORRECT LOGS */}
+      {editingRecord && (
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleUpdateRecord} className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-800">Correct Attendance Log</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Updating entry for {editingRecord.profiles?.first_name} {editingRecord.profiles?.last_name}</p>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="flex flex-col space-y-1">
+                <label className="font-semibold text-slate-600">Date</label>
+                <input 
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditingDate(e.target.value)}
+                  required
+                  className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="font-semibold text-slate-600">Status Type</label>
+                <select 
+                  value={editStatus}
+                  onChange={(e) => setEditingStatus(e.target.value)}
+                  required
+                  className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="Check-In">Check-In</option>
+                  <option value="Check-Out">Check-Out</option>
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Casual Leave">Casual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Field Visit">Field Visit</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col space-y-1">
+                <label className="font-semibold text-slate-600">Note / Justification</label>
+                <textarea 
+                  value={editNotes}
+                  onChange={(e) => setEditingNotes(e.target.value)}
+                  placeholder="Explain why this correction was made..."
+                  required
+                  rows={2}
+                  className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 text-xs font-semibold pt-2">
+              <button
+                type="submit"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all shadow"
+              >
+                Save Correction
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingRecord(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -856,7 +1141,7 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* TAB 3: ATTENDANCE HISTORY & CORRECTIONS */}
+          {/* TAB 3: ATTENDANCE HISTORY, PAGINATION & CORRECTIONS */}
           {activeTab === 'attendance' && (
             <div className="space-y-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center">
@@ -928,7 +1213,10 @@ export default function AdminPanel() {
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1); // Reset to page 1 on new search
+                    }}
                     placeholder="Search by employee name or status..."
                     className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs w-full focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50/50"
                   />
@@ -947,55 +1235,104 @@ export default function AdminPanel() {
                       <th className="py-3">Location Checked</th>
                       <th className="py-3">Accuracy</th>
                       <th className="py-3">Status Flags</th>
+                      <th className="py-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {attendance
-                      .filter(rec => {
-                        const name = `${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}`.toLowerCase();
-                        const query = searchQuery.toLowerCase();
-                        return name.includes(query) || rec.status.toLowerCase().includes(query);
-                      })
-                      .map(rec => (
-                        <tr key={rec.id} className="hover:bg-slate-50/20">
-                          <td className="py-3 font-semibold text-slate-800">
-                            {rec.profiles?.first_name} {rec.profiles?.last_name}
-                          </td>
-                          <td className="py-3 text-slate-500">{rec.profiles?.department || 'General'}</td>
-                          <td className="py-3 font-medium text-slate-600">{rec.date}</td>
-                          <td className="py-3 font-bold text-slate-700">{rec.status}</td>
-                          <td className="py-3 text-slate-600 italic max-w-xs truncate" title={rec.notes}>
-                            {rec.notes || <span className="text-slate-300 italic">No notes added</span>}
-                          </td>
-                          <td className="py-3">
-                            {rec.check_in_lat ? (
-                              <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${rec.check_in_lat},${rec.check_in_lng}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 text-emerald-600 hover:underline font-bold"
-                              >
-                                <MapPin className="w-3.5 h-3.5" />
-                                <span>Maps Link</span>
-                              </a>
-                            ) : (
-                              <span className="text-slate-400 italic">No GPS data</span>
-                            )}
-                          </td>
-                          <td className="py-3 font-mono text-slate-400">{rec.gps_accuracy ? `±${Math.round(rec.gps_accuracy)}m` : 'N/A'}</td>
-                          <td className="py-3 space-x-1.5">
-                            {rec.is_out_of_geofence && (
-                              <span className="bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded text-[10px]">GEOFENCE</span>
-                            )}
-                            {rec.is_late && (
-                              <span className="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[10px]">LATE</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                    {paginatedAttendance.map(rec => (
+                      <tr key={rec.id} className="hover:bg-slate-50/20">
+                        <td className="py-3 font-semibold text-slate-800">
+                          {rec.profiles?.first_name} {rec.profiles?.last_name}
+                        </td>
+                        <td className="py-3 text-slate-500">{rec.profiles?.department || 'General'}</td>
+                        <td className="py-3 font-medium text-slate-600">{rec.date}</td>
+                        <td className="py-3 font-bold text-slate-700">{rec.status}</td>
+                        <td className="py-3 text-slate-600 italic max-w-xs truncate" title={rec.notes}>
+                          {rec.notes || <span className="text-slate-300 italic">No notes added</span>}
+                        </td>
+                        <td className="py-3">
+                          {rec.check_in_lat ? (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${rec.check_in_lat},${rec.check_in_lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1 text-emerald-600 hover:underline font-bold"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span>Maps Link</span>
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 italic">No GPS data</span>
+                          )}
+                        </td>
+                        <td className="py-3 font-mono text-slate-400">{rec.gps_accuracy ? `±${Math.round(rec.gps_accuracy)}m` : 'N/A'}</td>
+                        <td className="py-3 space-x-1.5">
+                          {rec.is_out_of_geofence && (
+                            <span className="bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded text-[10px]">GEOFENCE</span>
+                          )}
+                          {rec.is_late && (
+                            <span className="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[10px]">LATE</span>
+                          )}
+                        </td>
+                        <td className="py-3 text-center space-x-2">
+                          <button
+                            onClick={() => startEditingRecord(rec)}
+                            className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-all inline-flex"
+                            title="Edit / Correct record"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRecord(rec.id)}
+                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-all inline-flex"
+                            title="Delete log permanently"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
+
+              {/* HIGHLY ELEGANT TABLE PAGINATION CONTROLS */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-semibold text-slate-500">
+                  <span>
+                    Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredAttendance.length)} of {filteredAttendance.length} entries
+                  </span>
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1.5 rounded-lg border transition-all ${
+                          currentPage === pageNum 
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                            : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1063,34 +1400,55 @@ export default function AdminPanel() {
               </p>
               
               <div className="grid grid-cols-1 gap-4 text-xs">
+                {/* Daily export summary row */}
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-slate-800">Daily Log Summary</h4>
                     <p className="text-[10px] text-slate-400">Export active logs for current calendar day.</p>
                   </div>
-                  <button onClick={() => handleExportCSV('daily')} className="bg-slate-900 text-white font-semibold py-2 px-4 rounded-lg">
-                    Export CSV
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={() => handleExportCSV('daily')} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors">
+                      CSV
+                    </button>
+                    <button onClick={() => handleExportPDF('daily')} className="bg-slate-900 hover:bg-black text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-1.5 transition-colors">
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>PDF</span>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Weekly export summary row */}
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-slate-800">Weekly Breakdown</h4>
                     <p className="text-[10px] text-slate-400">Export active logs for previous 7 calendar days.</p>
                   </div>
-                  <button onClick={() => handleExportCSV('weekly')} className="bg-slate-900 text-white font-semibold py-2 px-4 rounded-lg">
-                    Export CSV
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={() => handleExportCSV('weekly')} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors">
+                      CSV
+                    </button>
+                    <button onClick={() => handleExportPDF('weekly')} className="bg-slate-900 hover:bg-black text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-1.5 transition-colors">
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>PDF</span>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Monthly export summary row */}
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-slate-800">Monthly Full Registry</h4>
                     <p className="text-[10px] text-slate-400">Export active logs for previous 30 calendar days.</p>
                   </div>
-                  <button onClick={() => handleExportCSV('monthly')} className="bg-slate-900 text-white font-semibold py-2 px-4 rounded-lg">
-                    Export CSV
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={() => handleExportCSV('monthly')} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg transition-colors">
+                      CSV
+                    </button>
+                    <button onClick={() => handleExportPDF('monthly')} className="bg-slate-900 hover:bg-black text-white font-semibold py-2 px-4 rounded-lg flex items-center space-x-1.5 transition-colors">
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>PDF</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

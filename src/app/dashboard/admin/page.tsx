@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
-  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2 
+  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck 
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -66,10 +66,8 @@ export default function AdminPanel() {
       setLoading(true);
       const email = user?.primaryEmailAddress?.emailAddress || '';
       
-      // Automatically elevate 'astishna09@gmail.com' in database
       const designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'employee';
 
-      // Check if profile exists, or create/sync on-the-fly
       let { data: profile, error: profError } = await supabase
         .from('profiles')
         .select('role')
@@ -77,7 +75,6 @@ export default function AdminPanel() {
         .maybeSingle();
 
       if (!profile) {
-        // Auto-create Admin profile row if you visit admin portal first
         await supabase.from('profiles').insert({
           id: user?.id,
           email: email,
@@ -88,10 +85,10 @@ export default function AdminPanel() {
           is_active: true,
         });
         profile = { role: designatedRole };
-      } else if (profile.role !== designatedRole) {
-        // Safe role elevation sync
-        await supabase.from('profiles').update({ role: designatedRole }).eq('id', user?.id);
-        profile.role = designatedRole;
+      } else if (email.toLowerCase() === 'astishna09@gmail.com' && profile.role !== 'admin') {
+        // Enforce main admin elevation
+        await supabase.from('profiles').update({ role: 'admin' }).eq('id', user?.id);
+        profile.role = 'admin';
       }
 
       if (profile.role !== 'admin') {
@@ -144,6 +141,36 @@ export default function AdminPanel() {
   const fetchNotifications = async () => {
     const { data } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
     if (data) setNotifications(data);
+  };
+
+  // Approve a pending admin
+  const handleApproveAdmin = async (profileId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: 'admin' })
+      .eq('id', profileId);
+
+    if (!error) {
+      alert('Administrator request approved successfully.');
+      fetchProfiles();
+    } else {
+      alert('Failed to approve request: ' + error.message);
+    }
+  };
+
+  // Reject / Downgrade to standard employee
+  const handleRejectAdmin = async (profileId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: 'employee' })
+      .eq('id', profileId);
+
+    if (!error) {
+      alert('User set to Employee role successfully.');
+      fetchProfiles();
+    } else {
+      alert('Failed to adjust role: ' + error.message);
+    }
   };
 
   // Update Settings
@@ -258,13 +285,17 @@ export default function AdminPanel() {
   // Calculate stats for Today
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecords = attendance.filter(r => r.date === todayStr);
-  const totalEmployeesCount = profiles.filter(p => p.is_active).length;
+  const totalEmployeesCount = profiles.filter(p => p.is_active && p.role === 'employee').length;
   const presentCount = todayRecords.filter(r => r.status === 'Check-In').length;
   const fieldCount = todayRecords.filter(r => r.status === 'Field Visit').length;
   const leaveCount = todayRecords.filter(r => ['Annual Leave', 'Casual Leave', 'Sick Leave'].includes(r.status)).length;
   const absentCount = Math.max(0, totalEmployeesCount - (presentCount + fieldCount + leaveCount));
 
-  // While loading or redirecting, show a friendly status screen
+  // Separate Pending Admins
+  const pendingAdmins = profiles.filter(p => p.role === 'pending_admin');
+  const activeProfiles = profiles.filter(p => p.role !== 'pending_admin');
+
+  // While loading, show a friendly status screen
   if (!isLoaded || !user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -446,111 +477,160 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* TAB 2: EMPLOYEE DIRECTORY */}
+          {/* TAB 2: EMPLOYEE DIRECTORY & APPROVALS */}
           {activeTab === 'employees' && (
-            <div className="space-y-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-slate-800 text-base">NGO Employee Directory</h3>
-                <button 
-                  onClick={() => setShowAddEmp(!showAddEmp)}
-                  className="flex items-center space-x-1 bg-slate-900 text-white font-semibold text-xs py-2 px-4 rounded-lg"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Register Employee</span>
-                </button>
-              </div>
-
-              {showAddEmp && (
-                <form onSubmit={handleAddEmployee} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">Clerk User ID (or unique handle)</label>
-                    <input 
-                      value={newEmpId} onChange={(e) => setNewEmpId(e.target.value)}
-                      placeholder="e.g. user_abc123" required
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                    />
+            <div className="space-y-8">
+              
+              {/* PENDING APPROVALS SECTION */}
+              {pendingAdmins.length > 0 && (
+                <div className="space-y-4 bg-amber-50/50 p-6 rounded-xl border border-amber-200 shadow-sm">
+                  <h3 className="font-bold text-amber-900 text-sm flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>Pending Administrator Approvals ({pendingAdmins.length})</span>
+                  </h3>
+                  <p className="text-xs text-amber-700 leading-normal">
+                    These users selected "Administrator" at registration. They will have no system access until you approve their elevation.
+                  </p>
+                  <div className="overflow-x-auto bg-white rounded-lg border border-amber-100">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/50 uppercase tracking-wider font-semibold">
+                          <th className="py-3 px-4">Name</th>
+                          <th className="py-3 px-4">Email</th>
+                          <th className="py-3 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {pendingAdmins.map(p => (
+                          <tr key={p.id}>
+                            <td className="py-3 px-4 font-bold text-slate-800">{p.first_name} {p.last_name}</td>
+                            <td className="py-3 px-4 font-mono text-slate-500">{p.email}</td>
+                            <td className="py-3 px-4 space-x-2">
+                              <button 
+                                onClick={() => handleApproveAdmin(p.id)}
+                                className="inline-flex items-center space-x-1 bg-emerald-600 text-white font-bold py-1 px-3 rounded text-[10px]"
+                              >
+                                <UserCheck className="w-3 h-3" />
+                                <span>Approve Admin</span>
+                              </button>
+                              <button 
+                                onClick={() => handleRejectAdmin(p.id)}
+                                className="inline-flex items-center space-x-1 bg-slate-200 text-slate-700 font-bold py-1 px-3 rounded text-[10px]"
+                              >
+                                <span>Set to Employee</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">Email Address</label>
-                    <input 
-                      value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)}
-                      placeholder="employee@ngo.org" type="email" required
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">First Name</label>
-                    <input 
-                      value={newEmpFirst} onChange={(e) => setNewEmpFirst(e.target.value)}
-                      placeholder="First Name"
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">Last Name</label>
-                    <input 
-                      value={newEmpLast} onChange={(e) => setNewEmpLast(e.target.value)}
-                      placeholder="Last Name"
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">Department</label>
-                    <input 
-                      value={newEmpDept} onChange={(e) => setNewEmpDept(e.target.value)}
-                      placeholder="e.g. Field Ops, Finance"
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                    />
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-700">System Role</label>
-                    <select 
-                      value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value as any)}
-                      className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-semibold"
-                    >
-                      <option value="employee">Employee (standard user)</option>
-                      <option value="admin">Administrator (full access)</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-3 flex justify-end">
-                    <button type="submit" className="bg-emerald-600 text-white font-bold py-2 px-6 rounded shadow">
-                      Save Database Profile
-                    </button>
-                  </div>
-                </form>
+                </div>
               )}
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-semibold">
-                      <th className="py-3">Clerk ID</th>
-                      <th className="py-3">Name</th>
-                      <th className="py-3">Email Address</th>
-                      <th className="py-3">Department</th>
-                      <th className="py-3">Role</th>
-                      <th className="py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {profiles.map(p => (
-                      <tr key={p.id}>
-                        <td className="py-3 font-mono text-slate-500">{p.id}</td>
-                        <td className="py-3 font-semibold text-slate-800">{p.first_name} {p.last_name}</td>
-                        <td className="py-3 text-slate-600">{p.email}</td>
-                        <td className="py-3 text-slate-600">{p.department || 'General'}</td>
-                        <td className="py-3">
-                          <span className={`px-2 py-0.5 rounded font-bold ${p.role === 'admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
-                            {p.role}
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <span className="text-emerald-600 font-semibold">Active</span>
-                        </td>
+              {/* DIRECTORY SECTION */}
+              <div className="space-y-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-slate-800 text-base">NGO Employee Directory</h3>
+                  <button 
+                    onClick={() => setShowAddEmp(!showAddEmp)}
+                    className="flex items-center space-x-1 bg-slate-900 text-white font-semibold text-xs py-2 px-4 rounded-lg"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Register Employee Manual</span>
+                  </button>
+                </div>
+
+                {showAddEmp && (
+                  <form onSubmit={handleAddEmployee} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">Clerk User ID (or unique handle)</label>
+                      <input 
+                        value={newEmpId} onChange={(e) => setNewEmpId(e.target.value)}
+                        placeholder="e.g. user_abc123" required
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">Email Address</label>
+                      <input 
+                        value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)}
+                        placeholder="employee@ngo.org" type="email" required
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">First Name</label>
+                      <input 
+                        value={newEmpFirst} onChange={(e) => setNewEmpFirst(e.target.value)}
+                        placeholder="First Name"
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">Last Name</label>
+                      <input 
+                        value={newEmpLast} onChange={(e) => setNewEmpLast(e.target.value)}
+                        placeholder="Last Name"
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">Department</label>
+                      <input 
+                        value={newEmpDept} onChange={(e) => setNewEmpDept(e.target.value)}
+                        placeholder="e.g. Field Ops, Finance"
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <label className="font-semibold text-slate-700">System Role</label>
+                      <select 
+                        value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value as any)}
+                        className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-semibold"
+                      >
+                        <option value="employee">Employee (standard user)</option>
+                        <option value="admin">Administrator (full access)</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-3 flex justify-end">
+                      <button type="submit" className="bg-emerald-600 text-white font-bold py-2 px-6 rounded shadow">
+                        Save Database Profile
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider font-semibold">
+                        <th className="py-3">Name</th>
+                        <th className="py-3">Email Address</th>
+                        <th className="py-3">Department</th>
+                        <th className="py-3">Role</th>
+                        <th className="py-3">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {activeProfiles.map(p => (
+                        <tr key={p.id}>
+                          <td className="py-3 font-semibold text-slate-800">{p.first_name} {p.last_name}</td>
+                          <td className="py-3 text-slate-600 font-mono">{p.email}</td>
+                          <td className="py-3 text-slate-600">{p.department || 'General'}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-0.5 rounded font-bold ${p.role === 'admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
+                              {p.role}
+                            </span>
+                          </td>
+                          <td className="py-3">
+                            <span className="text-emerald-600 font-semibold">Active</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -578,7 +658,7 @@ export default function AdminPanel() {
                       className="border border-slate-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white font-semibold"
                     >
                       <option value="">-- Choose Employee --</option>
-                      {profiles.map(p => (
+                      {activeProfiles.map(p => (
                         <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                       ))}
                     </select>

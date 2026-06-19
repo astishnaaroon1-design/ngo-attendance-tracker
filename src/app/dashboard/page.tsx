@@ -5,13 +5,14 @@ import { useUser, SignOutButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 import { calculateDistance, checkIfLate } from '../lib/geofence';
-import { MapPin, CheckCircle, ShieldAlert, LogOut, Loader2, Calendar } from 'lucide-react';
+import { MapPin, CheckCircle, ShieldAlert, LogOut, Loader2, Calendar, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function EmployeeDashboard() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   
+  const [profileRole, setProfileRole] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -26,12 +27,24 @@ export default function EmployeeDashboard() {
     }
   }, [isLoaded, user, router]);
 
-  // Fetch log history on page load
+  // 2. Load and verify user profile
   useEffect(() => {
     if (user) {
-      fetchUserHistory();
+      verifyRoleAndFetchData();
     }
   }, [user]);
+
+  const verifyRoleAndFetchData = async () => {
+    const role = await ensureProfileExists();
+    setProfileRole(role);
+
+    // If fully approved Admin, redirect automatically
+    if (role === 'admin') {
+      router.push('/dashboard/admin');
+    } else if (role === 'employee') {
+      fetchUserHistory();
+    }
+  };
 
   const fetchUserHistory = async () => {
     if (!user) return;
@@ -46,13 +59,18 @@ export default function EmployeeDashboard() {
     }
   };
 
-  // Helper to ensure a profile exists in Supabase before logging attendance
   const ensureProfileExists = async () => {
-    if (!user) return;
+    if (!user) return 'employee';
     const email = user.primaryEmailAddress?.emailAddress || '';
     
-    // Automatically make 'astishna09@gmail.com' the admin, others become employees
-    const designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'employee';
+    // Check local storage for the chosen role
+    const selectedRole = typeof window !== 'undefined' ? localStorage.getItem('selected_role') : 'employee';
+    
+    let designatedRole = 'employee';
+    if (selectedRole === 'admin') {
+      // Only 'astishna09@gmail.com' becomes Admin instantly, others become pending_admin
+      designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'pending_admin';
+    }
 
     const { data, error } = await supabase
       .from('profiles')
@@ -60,12 +78,8 @@ export default function EmployeeDashboard() {
       .eq('id', user.id)
       .maybeSingle();
 
-    if (error) {
-      console.error('Error verifying profile:', error);
-    }
-
     if (!data) {
-      // Create profile row on-the-fly with the automated role assignment
+      // Create profile row on the fly
       await supabase.from('profiles').insert({
         id: user.id,
         email: email,
@@ -75,9 +89,14 @@ export default function EmployeeDashboard() {
         department: 'General',
         is_active: true,
       });
-    } else if (data.role !== designatedRole) {
-      // Safeguard: If the role in database is outdated, sync it on-the-fly
-      await supabase.from('profiles').update({ role: designatedRole }).eq('id', user.id);
+      return designatedRole;
+    } else {
+      // Safe check: Ensure astishna09@gmail.com is always elevated to admin automatically
+      if (email.toLowerCase() === 'astishna09@gmail.com' && data.role !== 'admin') {
+        await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
+        return 'admin';
+      }
+      return data.role;
     }
   };
 
@@ -107,41 +126,28 @@ export default function EmployeeDashboard() {
     setLocationStatus('Accessing browser satellite/GPS sensors...');
 
     try {
-      // 1. Get exact GPS Coordinates
       const position = await getBrowserLocation();
       const { latitude, longitude, accuracy } = position.coords;
       setLocationStatus('GPS signal locked successfully.');
 
-      // 2. Ensure Profile exists in Supabase
-      await ensureProfileExists();
-
-      // 3. Retrieve current Geofencing configurations
-      const { data: config, error: configError } = await supabase
+      const { data: config } = await supabase
         .from('geofence_settings')
         .select('*')
         .eq('id', 1)
         .single();
 
-      if (configError || !config) {
-        throw new Error('Could not download office boundary configurations from the server.');
-      }
-
-      // 4. Run distance checks
-      const distanceInMeters = calculateDistance(latitude, longitude, config.latitude, config.longitude);
-      const isOutOfGeofence = distanceInMeters > config.radius_meters;
+      const distance = calculateDistance(latitude, longitude, config.latitude, config.longitude);
+      const isOutOfGeofence = distance > config.radius_meters;
 
       const now = new Date();
       let isLate = false;
 
-      // Check for lateness only on office "Check-In" status
       if (status === 'Check-In') {
         isLate = checkIfLate(now, config.official_start_time);
       }
 
-      // Suppress out-of-geofence trigger for Field Visits
       const finalGeofenceAlert = (status === 'Field Visit') ? false : isOutOfGeofence;
 
-      // 5. Structure our record payload
       const recordPayload: any = {
         profile_id: user?.id,
         status: status,
@@ -161,25 +167,14 @@ export default function EmployeeDashboard() {
         recordPayload.check_out_lng = longitude;
       }
 
-      // 6. Write the log to our database
-      const { error: insertError } = await supabase
-        .from('attendance_records')
-        .insert([recordPayload]);
+      await supabase.from('attendance_records').insert([recordPayload]);
 
-      if (insertError) {
-        if (insertError.code === '23505') {
-          throw new Error(`You have already logged your "${status}" status for today.`);
-        }
-        throw new Error(insertError.message || 'Failed to submit database entry.');
-      }
-
-      // 7. Write triggered alerts to our Notifications table
       if (isLate) {
         await supabase.from('notifications').insert({
           profile_id: user?.id,
           type: 'late_checkin',
           title: 'Late Arrival Logged',
-          message: `${user?.fullName || 'An employee'} checked in late at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+          message: `${user?.fullName || 'An employee'} checked in late at ${now.toLocaleTimeString()}.`
         });
       }
 
@@ -188,30 +183,26 @@ export default function EmployeeDashboard() {
           profile_id: user?.id,
           type: 'out_of_geofence',
           title: 'Out of Geofence Check-in',
-          message: `${user?.fullName || 'An employee'} logged attendance ${Math.round(distanceInMeters)} meters away from the office.`
+          message: `${user?.fullName || 'An employee'} logged attendance ${Math.round(distance)}m away from office.`
         });
       }
 
-      // Celebrate clean logins!
       if (!finalGeofenceAlert && !isLate) {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
       }
 
       setMessage({
         type: 'success',
-        text: `Successfully logged your status: "${status}"! ${
-          finalGeofenceAlert ? 'Caution: System noted that you are outside of the office boundary.' : ''
-        }`,
+        text: `Successfully logged status: "${status}"!`,
       });
       setNotes('');
       setStatus('');
       fetchUserHistory();
 
     } catch (err: any) {
-      console.error(err);
       setMessage({
         type: 'error',
-        text: err.message || 'GPS lookup failed. Please make sure location settings are allowed in your browser settings.',
+        text: err.message || 'GPS lookup failed.',
       });
     } finally {
       setLoading(false);
@@ -219,18 +210,48 @@ export default function EmployeeDashboard() {
     }
   };
 
-  // While loading or redirecting, show a friendly status screen
-  if (!isLoaded || !user) {
+  // 3. SHOW Friendly Status screen while loading or checking roles
+  if (!isLoaded || !user || !profileRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center space-y-2">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-          <p className="text-sm text-gray-500">Redirecting to login portal...</p>
+          <p className="text-sm text-gray-500">Routing access credentials safely...</p>
         </div>
       </div>
     );
   }
 
+  // 4. SHOW Awaiting Admin Approval page if pending_admin
+  if (profileRole === 'pending_admin') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
+        <Lock className="w-16 h-16 text-amber-500 mb-4 animate-bounce" />
+        <h1 className="text-2xl font-black text-slate-800">Awaiting Admin Approval</h1>
+        <p className="text-slate-600 mt-2 max-w-sm text-sm">
+          Your request to join as an Administrator has been recorded. For security, the primary administrator (**`astishna09@gmail.com`**) must manually approve your request before you can access the admin dashboard.
+        </p>
+        <div className="mt-6 flex gap-4">
+          <button 
+            onClick={() => {
+              localStorage.setItem('selected_role', 'employee');
+              window.location.reload();
+            }}
+            className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-xs"
+          >
+            Access standard Employee Portal
+          </button>
+          <SignOutButton>
+            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-xs">
+              Sign Out
+            </button>
+          </SignOutButton>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. SHOW Employee Dashboard if role is standard employee
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-12">
       {/* Navbar Header */}
@@ -294,7 +315,7 @@ export default function EmployeeDashboard() {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Examples: Sick description, specific project site field name, leave justification..."
+                placeholder="Examples: Sick description, specific project site field name..."
                 rows={3}
                 className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
               />

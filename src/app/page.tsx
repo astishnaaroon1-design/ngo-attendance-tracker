@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck, UserCheck, CalendarDays, ExternalLink } from 'lucide-react';
+import { ShieldCheck, UserCheck, CalendarDays, ExternalLink, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -18,22 +18,14 @@ export default function Home() {
           Secure, verified, and automated attendance logging for physical offices and remote field visits.
         </p>
 
-        {/* Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-md justify-center">
+        {/* Action Button */}
+        <div className="mt-8 flex justify-center w-full">
           <Link
-            href="/dashboard"
-            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-sm"
+            href="/role-selection"
+            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-md text-base group"
           >
-            <UserCheck className="w-5 h-5" />
-            <span>Employee Portal</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/admin"
-            className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 active:bg-black text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-sm"
-          >
-            <ShieldCheck className="w-5 h-5" />
-            <span>Admin Panel</span>
+            <span>Get Started / Access Portal</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
@@ -52,7 +44,7 @@ export default function Home() {
               <ShieldCheck className="w-5 h-5 text-emerald-600" />
             </div>
             <h3 className="font-bold text-slate-800 text-sm">Geofencing</h3>
-            <p className="text-xs text-slate-500 mt-1">Automatic location radius checks against target office coords.</p>
+            <p className="text-xs text-slate-500 mt-1">Automatic location radius checks against office coordinates.</p>
           </div>
 
           <div className="flex flex-col items-center text-center p-4">
@@ -60,7 +52,7 @@ export default function Home() {
               <ExternalLink className="w-5 h-5 text-emerald-600" />
             </div>
             <h3 className="font-bold text-slate-800 text-sm">Real-time Dashboard</h3>
-            <p className="text-xs text-slate-500 mt-1">Instant warning system for admins upon violation.</p>
+            <p className="text-xs text-slate-500 mt-1">Instant warning system for admins upon boundary violation.</p>
           </div>
         </div>
       </div>

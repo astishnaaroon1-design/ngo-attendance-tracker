@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
+import { useUser, SignOutButton } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
@@ -10,6 +11,8 @@ import {
 
 export default function AdminPanel() {
   const { user, isLoaded } = useUser();
+  const router = useRouter();
+
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'employees' | 'attendance' | 'settings' | 'reports'>('overview');
   const [loading, setLoading] = useState<boolean>(true);
@@ -45,6 +48,13 @@ export default function AdminPanel() {
   const [manualStatus, setManualStatus] = useState('Check-In');
   const [manualNotes, setManualNotes] = useState('');
 
+  // 1. Safe Redirect Guard if not logged in
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, user, router]);
+
   useEffect(() => {
     if (user) {
       verifyRoleAndFetchData();
@@ -55,7 +65,7 @@ export default function AdminPanel() {
     try {
       setLoading(true);
       
-      // 1. Check if user is actually an Admin in Supabase
+      // Check if user is actually an Admin in Supabase
       const { data: profile, error: profError } = await supabase
         .from('profiles')
         .select('role')
@@ -70,7 +80,7 @@ export default function AdminPanel() {
 
       setIsAdmin(true);
 
-      // 2. Fetch all system configurations
+      // Fetch all system configurations
       await Promise.all([
         fetchProfiles(),
         fetchAttendance(),
@@ -232,7 +242,8 @@ export default function AdminPanel() {
   const leaveCount = todayRecords.filter(r => ['Annual Leave', 'Casual Leave', 'Sick Leave'].includes(r.status)).length;
   const absentCount = Math.max(0, totalEmployeesCount - (presentCount + fieldCount + leaveCount));
 
-  if (!isLoaded || loading) {
+  // While loading or redirecting, show a friendly status screen
+  if (!isLoaded || !user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-2">
@@ -266,78 +277,76 @@ export default function AdminPanel() {
   }
 
   return (
-    <>
-      <SignedIn>
-        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-          {/* Top Banner */}
-          <header className="bg-slate-900 text-white py-4 px-6 flex justify-between items-center shadow-md">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 font-black">
-                N
-              </div>
-              <span className="font-bold text-lg">NGO Dashboard — Admin Oversight</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-xs text-slate-300 font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-                System Administrator
-              </span>
-              <SignOutButton>
-                <button className="flex items-center space-x-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-1.5 rounded-md transition-all font-semibold">
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Logout</span>
-                </button>
-              </SignOutButton>
-            </div>
-          </header>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {/* Top Banner */}
+      <header className="bg-slate-900 text-white py-4 px-6 flex justify-between items-center shadow-md">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 font-black">
+            N
+          </div>
+          <span className="font-bold text-lg">NGO Dashboard — Admin Oversight</span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-xs text-slate-300 font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+            System Administrator
+          </span>
+          <SignOutButton>
+            <button className="flex items-center space-x-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-1.5 rounded-md transition-all font-semibold">
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
+            </button>
+          </SignOutButton>
+        </div>
+      </header>
 
-          {/* Main Container */}
-          <div className="flex-1 flex flex-col md:flex-row">
-            {/* Sidebar Tabs */}
-            <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex flex-col p-4 space-y-2">
-              {[
-                { id: 'overview', label: 'Live Headcount', icon: Users },
-                { id: 'employees', label: 'Employees', icon: Users },
-                { id: 'attendance', label: 'Attendance Logs', icon: Calendar },
-                { id: 'settings', label: 'Branch Settings', icon: Settings },
-                { id: 'reports', label: 'Generate Reports', icon: FileSpreadsheet },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-lg transition-all ${
-                      activeTab === tab.id
-                        ? 'bg-slate-900 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </aside>
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col md:flex-row">
+        {/* Sidebar Tabs */}
+        <aside className="w-full md:w-64 bg-white border-r border-slate-200 flex flex-col p-4 space-y-2">
+          {[
+            { id: 'overview', label: 'Live Headcount', icon: Users },
+            { id: 'employees', label: 'Employees', icon: Users },
+            { id: 'attendance', label: 'Attendance Logs', icon: Calendar },
+            { id: 'settings', label: 'Branch Settings', icon: Settings },
+            { id: 'reports', label: 'Generate Reports', icon: FileSpreadsheet },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </aside>
 
-            {/* Dashboard Content Panel */}
-            <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-              
-              {/* TAB 1: OVERVIEW */}
-              {activeTab === 'overview' && (
-                <div className="space-y-8">
-                  {/* Stat Row */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      { title: 'Present (In-Office)', count: presentCount, color: 'text-emerald-600 border-emerald-100 bg-emerald-50/50' },
-                      { title: 'Field / On-Site', count: fieldCount, color: 'text-blue-600 border-blue-100 bg-blue-50/50' },
-                      { title: 'Leave Logged', count: leaveCount, color: 'text-amber-600 border-amber-100 bg-amber-50/50' },
-                      { title: 'Absent / Unmarked', count: absentCount, color: 'text-rose-600 border-rose-100 bg-rose-50/50' },
-                    ].map((stat, i) => (
-                      <div key={i} className={`p-4 rounded-xl border bg-white shadow-sm flex flex-col justify-between ${stat.color}`}>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.title}</span>
-                        <span className="text-3xl font-black mt-2">{stat.count}</span>
-                      </div>
-                    ))}
+        {/* Dashboard Content Panel */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+          
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-8">
+              {/* Stat Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { title: 'Present (In-Office)', count: presentCount, color: 'text-emerald-600 border-emerald-100 bg-emerald-50/50' },
+                  { title: 'Field / On-Site', count: fieldCount, color: 'text-blue-600 border-blue-100 bg-blue-50/50' },
+                  { title: 'Leave Logged', count: leaveCount, color: 'text-amber-600 border-amber-100 bg-amber-50/50' },
+                  { title: 'Absent / Unmarked', count: absentCount, color: 'text-rose-600 border-rose-100 bg-rose-50/50' },
+                ].map((stat, i) => (
+                  <div key={i} className={`p-4 rounded-xl border bg-white shadow-sm flex flex-col justify-between ${stat.color}`}>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.title}</span>
+                    <span className="text-3xl font-black mt-2">{stat.count}</span>
+                  </div>
+                ))}
                   </div>
 
                   {/* Warnings and Live Logs */}
@@ -763,10 +772,5 @@ export default function AdminPanel() {
             </main>
           </div>
         </div>
-      </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
   );
 }

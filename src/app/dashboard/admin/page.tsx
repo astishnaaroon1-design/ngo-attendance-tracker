@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, SignOutButton, UserButton, useAuth } from '@clerk/nextjs'; // Imported useAuth cleanly here!
+import { useUser, SignOutButton, UserButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../../lib/supabase';
 import { logAttendanceAction } from '../../actions/attendance';

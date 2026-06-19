@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ========================================================
+   REFLCT NOIR: CLERK WHITE-LABEL OVERRIDES
+   Completely hides branding watermarks and dev badges
+   ======================================================== */
+
+/* Hide any outgoing Clerk branding anchor links */
+a[href*="clerk.com"] {
+  display: none !important;
+}
+
+/* Hide the orange 'Development mode' bottom badge */
+div[class*="cl-internal-"] {
+  display: none !important;
+}
+
+/* Specific elements fallback for watermark links */
+.cl-internal-b38t6s,
+.cl-internal-1807x1,
+.cl-internal-1hp94m8,
+.cl-internal-1t3n72l {
+  display: none !important;
+}

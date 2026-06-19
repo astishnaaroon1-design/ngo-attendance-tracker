@@ -16,6 +16,7 @@ const inter = Inter({
 
 export default function Home() {
   return (
+    // Note: We changed this container to "relative overflow-hidden" to keep the background pixels contained
     <div className={`${inter.className} relative min-h-screen overflow-hidden flex flex-col items-center justify-between p-6 sm:p-12 md:p-24 bg-[#030014] text-[#f4f0ff] antialiased`}>
       
       {/* 1. BACKGROUND GLOW & STAR-FIELD PARTICLES */}
@@ -66,6 +67,7 @@ export default function Home() {
                 Tracking Portal
               </span>
             </h1>
+            {/* Boosted contrast to Ash (#a8a6b7) for clear legibility! */}
             <p className="text-[15px] text-[#a8a6b7] max-w-lg leading-relaxed mx-auto">
               Secure, verified, and automated attendance logging for physical offices and remote field visits.
             </p>
@@ -102,6 +104,7 @@ export default function Home() {
               </svg>
             </div>
             <h3 className="font-medium text-[18px] text-[#f4f0ff]">6 Status Types</h3>
+            {/* Boosted contrast to Ash (#a8a6b7)! */}
             <p className="text-[13px] text-[#a8a6b7] leading-relaxed">Check-in, Check-out, Leave records, and Field logs.</p>
           </div>
 
@@ -109,10 +112,11 @@ export default function Home() {
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="p-3 rounded-full bg-[#060317] border border-[#2e3038]/60 text-[#f4f0ff] mb-2 shadow-inner">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></path>
+                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 0112 2.944" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
               </svg>
             </div>
             <h3 className="font-medium text-[18px] text-[#f4f0ff]">Geofencing</h3>
+            {/* Boosted contrast to Ash (#a8a6b7)! */}
             <p className="text-[13px] text-[#a8a6b7] leading-relaxed">Automatic location radius checks against office coordinates.</p>
           </div>
 
@@ -124,12 +128,13 @@ export default function Home() {
               </svg>
             </div>
             <h3 className="font-medium text-[18px] text-[#f4f0ff]">Real-time Dashboard</h3>
+            {/* Boosted contrast to Ash (#a8a6b7)! */}
             <p className="text-[13px] text-[#a8a6b7] leading-relaxed">Instant warning system for admins upon boundary violation.</p>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
+      {/* Footer Layer */}
       <footer className="relative z-10 mt-24 pt-8 w-full border-t border-[#2e3038]/40 text-center">
         <p className="text-[12px] text-[#918ea0]">
           © 2026 NGO Attendance Tracker. All rights reserved.

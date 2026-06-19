@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, SignOutButton } from '@clerk/nextjs';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
   Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2 

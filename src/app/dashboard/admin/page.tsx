@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useUser, SignOutButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../../lib/supabase';
+import { logAttendanceAction } from '../../../actions/attendance';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
-  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck 
+  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2 
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function AdminPanel() {
   const { user, isLoaded } = useUser();
@@ -48,6 +50,13 @@ export default function AdminPanel() {
   const [manualProfileId, setManualProfileId] = useState('');
   const [manualStatus, setManualStatus] = useState('Check-In');
   const [manualNotes, setManualNotes] = useState('');
+
+  // Automated Admin Check-In Popup States
+  const [showAdminCheckInModal, setShowAdminCheckInModal] = useState<boolean>(false);
+  const [adminStatus, setAdminStatus] = useState<string>('');
+  const [adminNotes, setAdminNotes] = useState<string>('');
+  const [adminSubmitting, setAdminSubmitting] = useState<boolean>(false);
+  const [adminLocationMsg, setAdminLocationStatus] = useState<string>('');
 
   // 1. Safe Redirect Guard if not logged in
   useEffect(() => {
@@ -111,6 +120,20 @@ export default function AdminPanel() {
         fetchNotifications()
       ]);
 
+      // 2. CHECK IF ADMIN HAS LOGGED ATTENDANCE TODAY
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: adminLogs } = await client
+        .from('attendance_records')
+        .select('id')
+        .eq('profile_id', user?.id)
+        .eq('date', todayStr);
+
+      if (adminLogs && adminLogs.length === 0) {
+        // Automatically pop up modal on daily first-load
+        setAdminStatus('Check-In');
+        setShowAdminCheckInModal(true);
+      }
+
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
@@ -168,6 +191,66 @@ export default function AdminPanel() {
       if (data) setNotifications(data);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Submit Admin Check-In/Out popup
+  const handleAdminCheckInSubmit = async () => {
+    if (!adminStatus) {
+      alert('Please select an attendance status first.');
+      return;
+    }
+
+    setAdminSubmitting(true);
+    setAdminLocationStatus('Accessing browser satellite/GPS sensors...');
+
+    try {
+      const getBrowserLocation = (): Promise<GeolocationPosition> => {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Your web browser does not support location tracking. Please try another modern browser.'));
+          } else {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0,
+            });
+          }
+        });
+      };
+
+      // 1. Capture exact coordinates
+      const position = await getBrowserLocation();
+      const { latitude, longitude, accuracy } = position.coords;
+      setAdminLocationStatus('GPS locked. Sending securely to server...');
+
+      // 2. Invoke our Secure Server Action
+      const result = await logAttendanceAction(
+        adminStatus,
+        latitude,
+        longitude,
+        accuracy,
+        adminNotes
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
+      alert(`Attendance recorded. Status: "${adminStatus}" successfully logged!`);
+      setShowAdminCheckInModal(false);
+      setAdminNotes('');
+      setAdminStatus('');
+      
+      // Refresh timeline logs so they see their check-in instantly
+      fetchAttendance();
+
+    } catch (err: any) {
+      alert(err.message || 'GPS capture failed.');
+    } finally {
+      setAdminSubmitting(false);
+      setAdminLocationStatus('');
     }
   };
 
@@ -241,7 +324,7 @@ export default function AdminPanel() {
     }
   };
 
-  // Add Employee Manually (creating a profile entry in Supabase)
+  // Add Employee Manually
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmpId || !newEmpEmail) {
@@ -374,7 +457,7 @@ export default function AdminPanel() {
           Your credentials do not carry Admin privileges. Please contact the NGO Administration team to elevate your profile.
         </p>
         <div className="mt-6 flex gap-4">
-          <a href="/dashboard" className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-xs">
+          <a href="/dashboard" className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-sm">
             Employee Portal
           </a>
           <SignOutButton>
@@ -388,7 +471,81 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col relative">
+      
+      {/* DAILY CHECK-IN MODAL POPUP FOR ADMIN */}
+      {showAdminCheckInModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+                <MapPin className="w-6 h-6 text-emerald-600 animate-bounce" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800">Good Day, Admin!</h3>
+              <p className="text-xs text-slate-500 leading-normal mt-1">
+                You haven't logged your attendance for today yet. Would you like to log your status now?
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5">Select Status</label>
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                  {['Check-In', 'Check-Out', 'Field Visit', 'Sick Leave'].map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setAdminStatus(opt)}
+                      className={`p-2.5 rounded-lg border text-left transition-all ${
+                        adminStatus === opt 
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20' 
+                          : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Notes (Optional)</label>
+                <textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="e.g. Work details, leaving early, etc."
+                  rows={2}
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              {adminLocationMsg && (
+                <p className="text-[10px] text-amber-600 animate-pulse font-semibold text-center leading-normal">
+                  {adminLocationMsg}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                <button
+                  onClick={handleAdminCheckInSubmit}
+                  disabled={adminSubmitting}
+                  className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {adminSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>Submit Attendance</span>
+                </button>
+
+                <button
+                  onClick={() => setShowAdminCheckInModal(false)}
+                  className="w-full text-slate-400 hover:text-slate-600 text-center text-xs font-semibold py-1 transition-colors"
+                >
+                  Remind me later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner */}
       <header className="bg-slate-900 text-white py-4 px-6 flex justify-between items-center shadow-md">
         <div className="flex items-center space-x-2">
@@ -398,6 +555,17 @@ export default function AdminPanel() {
           <span className="font-bold text-lg">NGO Dashboard — Admin Oversight</span>
         </div>
         <div className="flex items-center space-x-4">
+          <button
+            onClick={() => {
+              setAdminStatus('Check-In');
+              setShowAdminCheckInModal(true);
+            }}
+            className="flex items-center space-x-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-md transition-all font-bold shadow-sm"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>My Attendance</span>
+          </button>
+          
           <span className="text-xs text-slate-300 font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
             System Administrator
           </span>

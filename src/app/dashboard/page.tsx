@@ -1,5 +1,6 @@
 'use client';
 
+import { logAttendanceAction } from '../actions/attendance';
 import { useState, useEffect } from 'react';
 import { useUser, SignOutButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -12,7 +13,7 @@ export default function EmployeeDashboard() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth(); // Clerk helper to fetch our secure Supabase token
   const router = useRouter();
-  
+
   const [profileRole, setProfileRole] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -70,10 +71,10 @@ export default function EmployeeDashboard() {
   const ensureProfileExists = async () => {
     if (!user) return 'employee';
     const email = user.primaryEmailAddress?.emailAddress || '';
-    
+
     // Check local storage for the chosen role
     const selectedRole = typeof window !== 'undefined' ? localStorage.getItem('selected_role') : 'employee';
-    
+
     let designatedRole = 'employee';
     if (selectedRole === 'admin') {
       designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'pending_admin';
@@ -141,78 +142,37 @@ export default function EmployeeDashboard() {
     setLocationStatus('Accessing browser satellite/GPS sensors...');
 
     try {
+      // 1. Get exact GPS Coordinates
       const position = await getBrowserLocation();
       const { latitude, longitude, accuracy } = position.coords;
-      setLocationStatus('GPS signal locked successfully.');
+      setLocationStatus('GPS signal locked. Sending to secure server...');
 
-      const token = await getToken({ template: 'supabase' });
-      const client = getSupabaseClient(token);
+      // 2. Invoke our Secure Server Action
+      const result = await logAttendanceAction(
+        status,
+        latitude,
+        longitude,
+        accuracy,
+        notes
+      );
 
-      const { data: config } = await client
-        .from('geofence_settings')
-        .select('*')
-        .eq('id', 1)
-        .single();
-
-      const distance = calculateDistance(latitude, longitude, config.latitude, config.longitude);
-      const isOutOfGeofence = distance > config.radius_meters;
-
-      const now = new Date();
-      let isLate = false;
-
-      if (status === 'Check-In') {
-        isLate = checkIfLate(now, config.official_start_time);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      const finalGeofenceAlert = (status === 'Field Visit') ? false : isOutOfGeofence;
-
-      const recordPayload: any = {
-        profile_id: user?.id,
-        status: status,
-        notes: notes,
-        gps_accuracy: accuracy,
-        is_late: isLate,
-        is_out_of_geofence: finalGeofenceAlert,
-      };
-
-      if (status === 'Check-In' || status === 'Field Visit') {
-        recordPayload.check_in_time = now.toISOString();
-        recordPayload.check_in_lat = latitude;
-        recordPayload.check_in_lng = longitude;
-      } else if (status === 'Check-Out') {
-        recordPayload.check_out_time = now.toISOString();
-        recordPayload.check_out_lat = latitude;
-        recordPayload.check_out_lng = longitude;
-      }
-
-      await client.from('attendance_records').insert([recordPayload]);
-
-      if (isLate) {
-        await client.from('notifications').insert({
-          profile_id: user?.id,
-          type: 'late_checkin',
-          title: 'Late Arrival Logged',
-          message: `${user?.fullName || 'An employee'} checked in late at ${now.toLocaleTimeString()}.`
+      if (result.isOutOfGeofence || result.isLate) {
+        setMessage({
+          type: 'success',
+          text: `Logged status: "${status}"! Caution: System noted warnings on your entry (Check-in late or out-of-boundary).`,
         });
-      }
-
-      if (finalGeofenceAlert) {
-        await client.from('notifications').insert({
-          profile_id: user?.id,
-          type: 'out_of_geofence',
-          title: 'Out of Geofence Check-in',
-          message: `${user?.fullName || 'An employee'} logged attendance ${Math.round(distance)}m away from office.`
+      } else {
+        setMessage({
+          type: 'success',
+          text: `Successfully logged status: "${status}"!`,
         });
-      }
-
-      if (!finalGeofenceAlert && !isLate) {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
       }
 
-      setMessage({
-        type: 'success',
-        text: `Successfully logged status: "${status}"!`,
-      });
       setNotes('');
       setStatus('');
       fetchUserHistory();
@@ -250,7 +210,7 @@ export default function EmployeeDashboard() {
           Your request to join as an Administrator has been recorded. For security, the primary administrator (**`astishna09@gmail.com`**) must manually approve your request before you can access the admin dashboard.
         </p>
         <div className="mt-6 flex gap-4">
-          <button 
+          <button
             onClick={() => {
               localStorage.setItem('selected_role', 'employee');
               window.location.reload();
@@ -315,11 +275,10 @@ export default function EmployeeDashboard() {
                     key={opt}
                     type="button"
                     onClick={() => setStatus(opt)}
-                    className={`p-3 text-sm font-semibold rounded-lg border text-left transition-all ${
-                      status === opt
+                    className={`p-3 text-sm font-semibold rounded-lg border text-left transition-all ${status === opt
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
                         : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
-                    }`}
+                      }`}
                   >
                     {opt}
                   </button>
@@ -346,9 +305,8 @@ export default function EmployeeDashboard() {
 
             {message && (
               <div
-                className={`p-4 rounded-lg flex items-start space-x-2 text-sm leading-relaxed ${
-                  message.type === 'success' ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-rose-50 text-rose-900 border border-rose-100'
-                }`}
+                className={`p-4 rounded-lg flex items-start space-x-2 text-sm leading-relaxed ${message.type === 'success' ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-rose-50 text-rose-900 border border-rose-100'
+                  }`}
               >
                 {message.type === 'success' ? (
                   <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
@@ -389,7 +347,7 @@ export default function EmployeeDashboard() {
                     </span>
                   </div>
                   <div className="text-gray-400 font-medium">{new Date(rec.date).toLocaleDateString()}</div>
-                  
+
                   {rec.notes && <p className="text-gray-600 italic mt-1 font-sans">"{rec.notes}"</p>}
 
                   <div className="flex flex-wrap gap-1 mt-2">

@@ -976,7 +976,7 @@ export default function AdminPanel() {
               </div>
 
               <div className="flex flex-col space-y-1">
-                <label className="font-semibold text-slate-600">Note / Reason for Modification</label>
+                <label className="font-semibold text-[#a8a6b7]">Note / Reason for Modification</label>
                 <textarea 
                   value={editNotes}
                   onChange={(e) => setEditingNotes(e.target.value)}
@@ -1025,7 +1025,7 @@ export default function AdminPanel() {
                     value={reportStartDate}
                     onChange={(e) => setReportStartDate(e.target.value)}
                     required
-                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none"
                   />
                 </div>
                 <div className="flex flex-col space-y-1">
@@ -1035,7 +1035,7 @@ export default function AdminPanel() {
                     value={reportEndDate}
                     onChange={(e) => setReportEndDate(e.target.value)}
                     required
-                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1126,7 +1126,7 @@ export default function AdminPanel() {
             System Administrator
           </span>
           <SignOutButton>
-            <button className="flex items-center space-x-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-1.5 rounded-md transition-all font-semibold">
+            <button className="flex items-center space-x-1.5 text-xs bg-[#121317] border border-[#2e3038] hover:bg-slate-700 text-slate-100 px-3 py-1.5 rounded-md transition-all font-semibold">
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
             </button>
@@ -1531,7 +1531,7 @@ export default function AdminPanel() {
                           {rec.profiles?.first_name} {rec.profiles?.last_name}
                         </td>
                         <td className="py-3 text-[#a8a6b7]">{rec.profiles?.department || 'General'}</td>
-                        <td className="py-3 font-medium text-slate-600">{rec.date}</td>
+                        <td className="py-3 font-medium text-slate-400">{rec.date}</td>
                         <td className="py-3 font-bold text-[#f4f0ff]">{rec.status}</td>
                         <td className="py-3 text-slate-400 italic max-w-xs truncate" title={rec.notes}>
                           {rec.notes || <span className="text-slate-500 italic">No notes added</span>}
@@ -1633,7 +1633,7 @@ export default function AdminPanel() {
                     <input 
                       value={officeLat} onChange={(e) => setOfficeLat(e.target.value)}
                       placeholder="e.g. 33.6844" type="number" step="any" required
-                      className="border border-[#2e3038] p-2.5 rounded-[5px] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                      className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
                     />
                   </div>
                   <div className="flex flex-col space-y-1">
@@ -1641,7 +1641,7 @@ export default function AdminPanel() {
                     <input 
                       value={officeLng} onChange={(e) => setOfficeLng(e.target.value)}
                       placeholder="e.g. 73.0479" type="number" step="any" required
-                      className="border border-[#2e3038] p-2.5 rounded-[5px] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                      className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
                     />
                   </div>
                 </div>
@@ -1651,7 +1651,7 @@ export default function AdminPanel() {
                   <input 
                     value={radius} onChange={(e) => setRadius(e.target.value)}
                     placeholder="e.g. 100" type="number" required
-                    className="border border-[#2e3038] p-2.5 rounded-[5px] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                    className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
                   />
                   <p className="text-[10px] text-slate-400 leading-normal mt-0.5">
                     Any check-in placed farther than this distance from coordinates will log a warning notification flag.
@@ -1663,7 +1663,7 @@ export default function AdminPanel() {
                   <input 
                     value={startTime} onChange={(e) => setStartTime(e.target.value)}
                     type="time" step="1" required
-                    className="border border-[#2e3038] p-2.5 rounded-[5px] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                    className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
                   />
                   <p className="text-[10px] text-slate-400 leading-normal mt-0.5">
                     Check-Ins placed past this limit trigger a late registration alert.

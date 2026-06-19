@@ -1,33 +1,6 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 /* ========================================================
    REFLCT NOIR: CLERK WHITE-LABEL OVERRIDES
-   Completely hides branding watermarks and dev badges
+   Safely hides branding and development-mode badges
    ======================================================== */
 
 /* Hide any outgoing Clerk branding anchor links */
@@ -35,15 +8,11 @@ a[href*="clerk.com"] {
   display: none !important;
 }
 
-/* Hide the orange 'Development mode' bottom badge */
-div[class*="cl-internal-"] {
-  display: none !important;
-}
-
-/* Specific elements fallback for watermark links */
+/* Hide the development mode banner text at the bottom */
+p.cl-internal-b38t6s,
+p.cl-internal-1t3n72l,
+span.cl-internal-1t3n72l,
 .cl-internal-b38t6s,
-.cl-internal-1807x1,
-.cl-internal-1hp94m8,
-.cl-internal-1t3n72l {
+.cl-internal-1hp94m8 {
   display: none !important;
 }

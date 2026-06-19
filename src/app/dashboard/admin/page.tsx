@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser, SignOutButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../../lib/supabase';
-import { logAttendanceAction } from '../../../actions/attendance';
+import { logAttendanceAction } from '../../actions/attendance';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
   Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2 

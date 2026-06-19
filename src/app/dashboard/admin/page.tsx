@@ -120,7 +120,7 @@ export default function AdminPanel() {
         fetchNotifications()
       ]);
 
-      // 2. CHECK IF ADMIN HAS LOGGED ATTENDANCE TODAY
+      // CHECK IF ADMIN HAS LOGGED ATTENDANCE TODAY
       const todayStr = new Date().toISOString().split('T')[0];
       const { data: adminLogs } = await client
         .from('attendance_records')
@@ -129,7 +129,6 @@ export default function AdminPanel() {
         .eq('date', todayStr);
 
       if (adminLogs && adminLogs.length === 0) {
-        // Automatically pop up modal on daily first-load
         setAdminStatus('Check-In');
         setShowAdminCheckInModal(true);
       }
@@ -208,7 +207,7 @@ export default function AdminPanel() {
       const getBrowserLocation = (): Promise<GeolocationPosition> => {
         return new Promise((resolve, reject) => {
           if (!navigator.geolocation) {
-            reject(new Error('Your web browser does not support location tracking. Please try another modern browser.'));
+            reject(new Error('Your web browser does not support location tracking.'));
           } else {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: true,
@@ -219,12 +218,10 @@ export default function AdminPanel() {
         });
       };
 
-      // 1. Capture exact coordinates
       const position = await getBrowserLocation();
       const { latitude, longitude, accuracy } = position.coords;
       setAdminLocationStatus('GPS locked. Sending securely to server...');
 
-      // 2. Invoke our Secure Server Action
       const result = await logAttendanceAction(
         adminStatus,
         latitude,
@@ -238,12 +235,10 @@ export default function AdminPanel() {
       }
 
       confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
-      alert(`Attendance recorded. Status: "${adminStatus}" successfully logged!`);
+      alert(`Attendance recorded successfully for "${adminStatus}"!`);
       setShowAdminCheckInModal(false);
       setAdminNotes('');
       setAdminStatus('');
-      
-      // Refresh timeline logs so they see their check-in instantly
       fetchAttendance();
 
     } catch (err: any) {
@@ -328,7 +323,7 @@ export default function AdminPanel() {
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmpId || !newEmpEmail) {
-      alert('Please provide a unique ID (e.g., clerk user ID) and Email.');
+      alert('Please provide a unique ID and Email.');
       return;
     }
 
@@ -948,6 +943,7 @@ export default function AdminPanel() {
                       <th className="py-3">Department</th>
                       <th className="py-3">Date</th>
                       <th className="py-3">Status</th>
+                      <th className="py-3">Note / Reason</th>
                       <th className="py-3">Location Checked</th>
                       <th className="py-3">Accuracy</th>
                       <th className="py-3">Status Flags</th>
@@ -968,6 +964,9 @@ export default function AdminPanel() {
                           <td className="py-3 text-slate-500">{rec.profiles?.department || 'General'}</td>
                           <td className="py-3 font-medium text-slate-600">{rec.date}</td>
                           <td className="py-3 font-bold text-slate-700">{rec.status}</td>
+                          <td className="py-3 text-slate-600 italic max-w-xs truncate" title={rec.notes}>
+                            {rec.notes || <span className="text-slate-300 italic">No notes added</span>}
+                          </td>
                           <td className="py-3">
                             {rec.check_in_lat ? (
                               <a

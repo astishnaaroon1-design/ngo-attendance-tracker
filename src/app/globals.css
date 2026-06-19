@@ -1,4 +1,9 @@
 /* ========================================================
+   CORE TAILWIND V4 IMPORTS (Required to compile styles)
+   ======================================================== */
+@import "tailwindcss";
+
+/* ========================================================
    REFLCT NOIR: CLERK WHITE-LABEL OVERRIDES
    Safely hides branding and development-mode badges
    ======================================================== */

@@ -7,7 +7,7 @@ import { getSupabaseClient } from '../../lib/supabase';
 import { logAttendanceAction } from '../../actions/attendance';
 import { 
   Users, Calendar, Settings, FileSpreadsheet, Bell, 
-  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2, Printer, ChevronLeft, ChevronRight
+  Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2, Printer, ChevronLeft, ChevronRight, Filter
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -17,7 +17,7 @@ export default function AdminPanel() {
   const router = useRouter();
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'employees' | 'attendance' | 'settings' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'employees' | 'attendance' | 'alerts' | 'settings' | 'reports'>('overview');
   const [loading, setLoading] = useState<boolean>(true);
 
   // Database States
@@ -31,6 +31,10 @@ export default function AdminPanel() {
   const [attendanceFilterDate, setAttendanceFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const ITEMS_PER_PAGE = 50;
+
+  // New Dedicated System Alerts Tab Filtering States
+  const [alertTypeFilter, setAlertTypeFilter] = useState<string>('all');
+  const [alertSearchQuery, setAlertSearchQuery] = useState<string>('');
 
   // Form States (Settings edit)
   const [officeLat, setOfficeLat] = useState('');
@@ -201,7 +205,7 @@ export default function AdminPanel() {
     try {
       const token = await getToken({ template: 'supabase' });
       const client = getSupabaseClient(token);
-      const { data } = await client.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
+      const { data } = await client.from('notifications').select('*').order('created_at', { ascending: false });
       if (data) setNotifications(data);
     } catch (err) {
       console.error(err);
@@ -815,6 +819,35 @@ export default function AdminPanel() {
   const pendingAdmins = profiles.filter(p => p.role === 'pending_admin');
   const activeProfiles = profiles.filter(p => p.role !== 'pending_admin');
 
+  // Filter today's alerts only for the Main Overview
+  const todayNotifications = notifications.filter(n => 
+    new Date(n.created_at).toISOString().split('T')[0] === todayStr
+  );
+
+  // Filter system-alerts logs by search query and type
+  const filteredNotifications = notifications.filter(n => {
+    if (alertTypeFilter !== 'all' && n.type !== alertTypeFilter) return false;
+    if (alertSearchQuery && !n.message.toLowerCase().includes(alertSearchQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  // Group notifications chronologically by Date
+  const groupNotificationsByDate = (notifs: any[]) => {
+    const groups: { [key: string]: any[] } = {};
+    notifs.forEach(n => {
+      const dateStr = new Date(n.created_at).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      if (!groups[dateStr]) groups[dateStr] = [];
+      groups[dateStr].push(n);
+    });
+    return groups;
+  };
+  const groupedNotifications = groupNotificationsByDate(filteredNotifications);
+
   // Filter attendance logs by query
   const filteredAttendance = attendance.filter(rec => {
     const name = `${rec.profiles?.first_name || ''} ${rec.profiles?.last_name || ''}`.toLowerCase();
@@ -919,7 +952,7 @@ export default function AdminPanel() {
                 <button
                   onClick={handleAdminCheckInSubmit}
                   disabled={adminSubmitting}
-                  className="w-full bg-[#059669] text-white font-bold py-3 rounded-xl hover:bg-[#047857] transition-all text-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
+                  className="w-full bg-[#059669] text-white font-bold py-3 rounded-xl hover:bg-[#047857] transition-colors text-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                   {adminSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>Submit Attendance</span>
@@ -1029,7 +1062,7 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <label className="font-semibold text-[#475569]">End Date</label>
+                  <label className="font-semibold text-slate-600">End Date</label>
                   <input 
                     type="date"
                     value={reportEndDate}
@@ -1147,6 +1180,7 @@ export default function AdminPanel() {
             { id: 'overview', label: 'Live Headcount', icon: Users },
             { id: 'employees', label: 'Employees', icon: Users },
             { id: 'attendance', label: 'Attendance Logs', icon: Calendar },
+            { id: 'alerts', label: 'System Alerts', icon: Bell }, // New Dedicated Alerts History Tab!
             { id: 'settings', label: 'Branch Settings', icon: Settings },
             { id: 'reports', label: 'Generate Reports', icon: FileSpreadsheet },
           ].map((tab) => {
@@ -1191,18 +1225,18 @@ export default function AdminPanel() {
 
               {/* Warnings and Live Logs */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Real-time Alerts */}
+                {/* Real-time Alerts: FILTERS AND DISPLAYS TODAY ONLY */}
                 <div className="bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm md:col-span-1">
                   <h3 className="font-bold text-rose-600 text-sm mb-4 flex items-center gap-2">
                     <Bell className="w-4 h-4" />
-                    <span>Real-Time Alerts</span>
+                    <span>Real-Time Today's Alerts</span>
                   </h3>
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                    {notifications.length === 0 ? (
-                      <p className="text-xs text-[#475569] italic">No security warnings triggered today.</p>
+                    {todayNotifications.length === 0 ? (
+                      <p className="text-xs text-[#475569] italic">No warnings triggered yet today.</p>
                     ) : (
-                      notifications.map(n => (
-                        <div key={n.id} className="p-3 bg-rose-55 border border-rose-200 rounded-lg text-xs space-y-1">
+                      todayNotifications.map(n => (
+                        <div key={n.id} className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs space-y-1 animate-in fade-in">
                           <div className="flex justify-between items-center font-bold text-rose-950">
                             <span>{n.title}</span>
                             <span className="text-[10px] text-rose-600 font-semibold">
@@ -1266,7 +1300,7 @@ export default function AdminPanel() {
 
           {/* TAB 2: EMPLOYEE DIRECTORY & APPROVALS */}
           {activeTab === 'employees' && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-fade-in">
               
               {/* PENDING APPROVALS SECTION */}
               {pendingAdmins.length > 0 && (
@@ -1291,7 +1325,7 @@ export default function AdminPanel() {
                         {pendingAdmins.map(p => (
                           <tr key={p.id}>
                             <td className="py-3 px-4 font-bold text-[#0f172a]">{p.first_name} {p.last_name}</td>
-                            <td className="py-3 px-4 font-mono text-slate-500">{p.email}</td>
+                            <td className="py-3 px-4 font-mono text-[#475569]">{p.email}</td>
                             <td className="py-3 px-4 space-x-2">
                               <button 
                                 onClick={() => handleApproveAdmin(p.id)}
@@ -1329,7 +1363,7 @@ export default function AdminPanel() {
                 </div>
 
                 {showAddEmp && (
-                  <form onSubmit={handleAddEmployee} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <form onSubmit={handleAddEmployee} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs animate-in fade-in duration-200">
                     <div className="flex flex-col space-y-1">
                       <label className="font-semibold text-slate-600">Clerk User ID (or unique handle)</label>
                       <input 
@@ -1434,7 +1468,7 @@ export default function AdminPanel() {
 
           {/* TAB 3: ATTENDANCE HISTORY, PAGINATION & CORRECTIONS */}
           {activeTab === 'attendance' && (
-            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm">
+            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm animate-fade-in">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-[#059669] text-base">Attendance Master Log</h3>
                 <button 
@@ -1447,11 +1481,12 @@ export default function AdminPanel() {
               </div>
 
               {showManualLog && (
-                <form onSubmit={handleManualAttendance} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <form onSubmit={handleManualAttendance} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs animate-in fade-in duration-200">
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Select Employee</label>
                     <select 
-                      value={manualProfileId} onChange={(e) => setManualProfileId(e.target.value)} required
+                      value={manualProfileId} 
+                      onChange={(e) => setManualProfileId(e.target.value)} required
                       className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                     >
                       <option value="">-- Choose Employee --</option>
@@ -1479,7 +1514,7 @@ export default function AdminPanel() {
                     <input 
                       value={attendanceFilterDate} onChange={(e) => setAttendanceFilterDate(e.target.value)}
                       type="date" required
-                      className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
+                      className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
                     />
                   </div>
                   <div className="md:col-span-3 flex flex-col space-y-1">
@@ -1627,7 +1662,90 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* TAB 4: BRANCH & GEOFENCE SETTINGS */}
+          {/* TAB 4: NEW HISTORICAL SYSTEM ALERTS & SEARCH PANEL */}
+          {activeTab === 'alerts' && (
+            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm animate-fade-in">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#cbd5e1]/40 pb-4">
+                <div>
+                  <h3 className="font-bold text-[#0f172a] text-base flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-rose-500" />
+                    <span>System Warnings Master Ledger</span>
+                  </h3>
+                  <p className="text-xs text-[#475569] leading-relaxed mt-1">
+                    Review and audit all historical out-of-geofence breaches and late arrivals logged across the organization.
+                  </p>
+                </div>
+                
+                {/* Filters Row */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center space-x-1 bg-[#f8fafc] border border-[#cbd5e1] rounded-lg p-1.5 text-xs font-semibold text-slate-700">
+                    <Filter className="w-3.5 h-3.5 text-slate-500" />
+                    <select
+                      value={alertTypeFilter}
+                      onChange={(e) => setAlertTypeFilter(e.target.value)}
+                      className="bg-transparent border-none p-0 focus:ring-0 text-xs font-semibold cursor-pointer outline-none"
+                    >
+                      <option value="all">All Warnings</option>
+                      <option value="late_checkin">Late Arrivals Only</option>
+                      <option value="out_of_geofence">Geofence Breaches Only</option>
+                    </select>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      value={alertSearchQuery}
+                      onChange={(e) => setAlertSearchQuery(e.target.value)}
+                      placeholder="Search alerts by employee name..."
+                      className="pl-8 pr-4 py-1.5 border border-[#cbd5e1] rounded-lg text-xs w-64 bg-[#f8fafc] focus:outline-none focus:ring-1 focus:ring-[#059669]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grouped Alert Log Content */}
+              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-1">
+                {Object.keys(groupedNotifications).length === 0 ? (
+                  <p className="text-xs text-[#475569] italic text-center py-8">No alerts matches your filter criteria.</p>
+                ) : (
+                  Object.keys(groupedNotifications).map(dateStr => (
+                    <div key={dateStr} className="space-y-3">
+                      {/* Date Heading: Whispering, clean ledger format */}
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-[#cbd5e1]/30 pb-1 pt-2">
+                        {dateStr}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {groupedNotifications[dateStr].map((n: any) => (
+                          <div 
+                            key={n.id} 
+                            className={`p-4 rounded-xl border flex flex-col justify-between shadow-sm transition-all bg-[#ffffff] ${
+                              n.type === 'out_of_geofence' 
+                                ? 'border-rose-100 bg-rose-50/20 text-rose-950' 
+                                : 'border-amber-100 bg-amber-50/20 text-amber-950'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">
+                                {n.type === 'out_of_geofence' ? 'Geofence Breach' : 'Late Arrival'}
+                              </span>
+                              <span className="text-[10px] font-semibold opacity-50">
+                                {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs font-semibold leading-relaxed font-sans">{n.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: BRANCH & GEOFENCE SETTINGS */}
           {activeTab === 'settings' && (
             <div className="max-w-xl bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm space-y-6">
               <h3 className="font-bold text-[#0f172a] text-base">Global Branch Configurations</h3>
@@ -1652,7 +1770,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="flex flex-col space-y-1">
-                  <label className="font-semibold text-slate-300">Allowable Radius (in Meters)</label>
+                  <label className="font-semibold text-[#0f172a]">Allowable Radius (in Meters)</label>
                   <input 
                     value={radius} onChange={(e) => setRadius(e.target.value)}
                     placeholder="e.g. 100" type="number" required
@@ -1664,7 +1782,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="flex flex-col space-y-1">
-                  <label className="font-semibold text-slate-300">Official Office Start Time</label>
+                  <label className="font-semibold text-[#0f172a]">Official Office Start Time</label>
                   <input 
                     value={startTime} onChange={(e) => setStartTime(e.target.value)}
                     type="time" step="1" required
@@ -1682,7 +1800,7 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* TAB 5: REPORTS & EXPORTS */}
+          {/* TAB 6: REPORTS & EXPORTS */}
           {activeTab === 'reports' && (
             <div className="max-w-xl bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm space-y-6">
               <h3 className="font-bold text-[#0f172a] text-base">Export Attendance Records</h3>
@@ -1691,8 +1809,8 @@ export default function AdminPanel() {
               </p>
               
               <div className="grid grid-cols-1 gap-4 text-xs">
-                {/* Daily export summary row */}
-                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
+                {/* Daily export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
                     <h4 className="font-bold text-[#0f172a]">Daily Log Summary</h4>
                     <p className="text-[10px] text-[#475569]">Export active logs for current calendar day.</p>
@@ -1708,11 +1826,11 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Weekly export summary row */}
-                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
+                {/* Weekly export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
-                    <h4 className="font-bold text-[#f4f0ff]">Weekly Breakdown</h4>
-                    <p className="text-[10px] text-[#acafb9]">Export active logs for previous 7 calendar days.</p>
+                    <h4 className="font-bold text-[#0f172a]">Weekly Breakdown</h4>
+                    <p className="text-[10px] text-[#475569]">Export active logs for previous 7 calendar days.</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button onClick={() => handleExportCSV('weekly')} className="bg-[#ffffff] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 font-semibold py-2 px-4 rounded-[5px] transition-colors cursor-pointer">
@@ -1725,11 +1843,11 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Monthly export summary row */}
-                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
+                {/* Monthly export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
-                    <h4 className="font-bold text-[#f4f0ff]">Monthly Full Registry</h4>
-                    <p className="text-[10px] text-[#acafb9]">Export active logs for previous 30 calendar days.</p>
+                    <h4 className="font-bold text-[#0f172a]">Monthly Full Registry</h4>
+                    <p className="text-[10px] text-[#475569]">Export active logs for previous 30 calendar days.</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button onClick={() => handleExportCSV('monthly')} className="bg-[#ffffff] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 font-semibold py-2 px-4 rounded-[5px] transition-colors cursor-pointer">

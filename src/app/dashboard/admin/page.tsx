@@ -830,10 +830,10 @@ export default function AdminPanel() {
   // While loading, show a friendly status screen
   if (!isLoaded || !user || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
         <div className="text-center space-y-2">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-          <p className="text-sm text-slate-500">Retrieving NGO master records...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-[#059669] mx-auto" />
+          <p className="text-sm text-slate-500 font-semibold">Retrieving NGO master records...</p>
         </div>
       </div>
     );
@@ -841,18 +841,18 @@ export default function AdminPanel() {
 
   if (isAdmin === false) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] p-4 text-center">
         <AlertTriangle className="w-16 h-16 text-rose-500 mb-4" />
-        <h1 className="text-2xl font-black text-slate-800">Access Restricted</h1>
+        <h1 className="text-2xl font-black text-[#0f172a]">Access Restricted</h1>
         <p className="text-slate-600 mt-2 max-w-sm text-sm">
           Your credentials do not carry Admin privileges. Please contact the NGO Administration team to elevate your profile.
         </p>
         <div className="mt-6 flex gap-4">
-          <a href="/dashboard" className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-lg text-sm">
+          <a href="/dashboard" className="bg-[#059669] text-white font-semibold py-2.5 px-5 rounded-lg text-sm hover:bg-[#047857]">
             Employee Portal
           </a>
           <SignOutButton>
-            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-xs">
+            <button className="bg-slate-200 text-slate-700 font-semibold py-2.5 px-5 rounded-lg text-sm">
               Sign Out
             </button>
           </SignOutButton>
@@ -862,18 +862,18 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col relative">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] flex flex-col relative antialiased selection:bg-[#059669]/10 selection:text-[#059669]">
       
       {/* DAILY CHECK-IN MODAL POPUP FOR ADMIN */}
       {showAdminCheckInModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[24px] p-6 max-w-sm w-full border border-[#cbd5e1] shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-                <MapPin className="w-6 h-6 text-emerald-600 animate-bounce" />
+                <MapPin className="w-6 h-6 text-[#059669] animate-bounce" />
               </div>
-              <h3 className="text-lg font-black text-slate-800">Good Day, Admin!</h3>
-              <p className="text-xs text-slate-500 leading-normal mt-1">
+              <h3 className="text-lg font-bold text-[#0f172a]">Good Day, Admin!</h3>
+              <p className="text-xs text-slate-600 leading-normal mt-1">
                 You haven't logged your attendance for today yet. Would you like to log your status now?
               </p>
             </div>
@@ -886,9 +886,9 @@ export default function AdminPanel() {
                     <button
                       key={opt}
                       onClick={() => setAdminStatus(opt)}
-                      className={`p-2.5 rounded-lg border text-left transition-all ${
+                      className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                         adminStatus === opt 
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20' 
+                          ? 'border-[#059669] bg-[#f0fdf4] text-[#059669] ring-2 ring-[#059669]/20' 
                           : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
                       }`}
                     >
@@ -905,7 +905,7 @@ export default function AdminPanel() {
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder="e.g. Work details, leaving early, etc."
                   rows={2}
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full text-xs p-2.5 border border-[#cbd5e1] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#0f172a]"
                 />
               </div>
 
@@ -919,7 +919,7 @@ export default function AdminPanel() {
                 <button
                   onClick={handleAdminCheckInSubmit}
                   disabled={adminSubmitting}
-                  className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full bg-[#059669] text-white font-bold py-3 rounded-xl hover:bg-[#047857] transition-all text-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                   {adminSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>Submit Attendance</span>
@@ -927,7 +927,7 @@ export default function AdminPanel() {
 
                 <button
                   onClick={() => setShowAdminCheckInModal(false)}
-                  className="w-full text-slate-400 hover:text-slate-600 text-center text-xs font-semibold py-1 transition-colors"
+                  className="w-full text-slate-400 hover:text-slate-600 text-center text-xs font-semibold py-1 transition-colors cursor-pointer"
                 >
                   Remind me later
                 </button>
@@ -939,11 +939,11 @@ export default function AdminPanel() {
 
       {/* EDIT MODAL POPUP FOR ADMIN TO CORRECT LOGS */}
       {editingRecord && (
-        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleUpdateRecord} className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleUpdateRecord} className="bg-white rounded-[24px] p-6 max-w-sm w-full border border-[#cbd5e1] shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-800">Correct Attendance Log</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Updating entry for {editingRecord.profiles?.first_name} {editingRecord.profiles?.last_name}</p>
+              <h3 className="text-sm font-bold text-[#0f172a]">Correct Attendance Log</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Updating entry for {editingRecord.profiles?.first_name} {editingRecord.profiles?.last_name}</p>
             </div>
 
             <div className="space-y-3.5 text-xs">
@@ -954,7 +954,7 @@ export default function AdminPanel() {
                   value={editDate}
                   onChange={(e) => setEditingDate(e.target.value)}
                   required
-                  className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                 />
               </div>
 
@@ -964,7 +964,7 @@ export default function AdminPanel() {
                   value={editStatus}
                   onChange={(e) => setEditingStatus(e.target.value)}
                   required
-                  className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] font-semibold focus:outline-none focus:ring-1 focus:ring-[#059669]"
                 >
                   <option value="Check-In">Check-In</option>
                   <option value="Check-Out">Check-Out</option>
@@ -976,14 +976,14 @@ export default function AdminPanel() {
               </div>
 
               <div className="flex flex-col space-y-1">
-                <label className="font-semibold text-[#a8a6b7]">Note / Reason for Modification</label>
+                <label className="font-semibold text-[#475569]">Note / Reason for Modification</label>
                 <textarea 
                   value={editNotes}
                   onChange={(e) => setEditingNotes(e.target.value)}
                   placeholder="Explain why this correction was made..."
                   required
                   rows={2}
-                  className="border border-[#2e3038] bg-[#030014] p-2.5 rounded-[5px] text-white focus:outline-none"
+                  className="border border-[#cbd5e1] bg-white p-2.5 rounded-[8px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                 />
               </div>
             </div>
@@ -991,14 +991,14 @@ export default function AdminPanel() {
             <div className="flex gap-2.5 text-xs font-semibold pt-2">
               <button
                 type="submit"
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all shadow"
+                className="flex-1 bg-[#059669] hover:bg-[#047857] text-white py-2.5 rounded-xl transition-all shadow cursor-pointer"
               >
                 Save Correction
               </button>
               <button
                 type="button"
                 onClick={() => setEditingRecord(null)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl transition-all"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-[#0f172a] py-2.5 rounded-xl transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1009,10 +1009,10 @@ export default function AdminPanel() {
 
       {/* INDIVIDUAL EMPLOYEE MANUAL DATE RANGE REPORT MODAL */}
       {reportEmployee && (
-        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleGenerateIndividualReport} className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleGenerateIndividualReport} className="bg-white rounded-[24px] p-6 max-w-sm w-full border border-[#cbd5e1] shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-800">Generate Staff Report</h3>
+              <h3 className="text-sm font-bold text-[#0f172a]">Generate Staff Report</h3>
               <p className="text-[10px] text-slate-500 mt-0.5">Creating manual date ledger for {reportEmployee.first_name} {reportEmployee.last_name}</p>
             </div>
 
@@ -1025,30 +1025,30 @@ export default function AdminPanel() {
                     value={reportStartDate}
                     onChange={(e) => setReportStartDate(e.target.value)}
                     required
-                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none"
+                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                   />
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <label className="font-semibold text-slate-600">End Date</label>
+                  <label className="font-semibold text-[#475569]">End Date</label>
                   <input 
                     type="date"
                     value={reportEndDate}
                     onChange={(e) => setReportEndDate(e.target.value)}
                     required
-                    className="border border-slate-200 p-2.5 rounded-lg bg-slate-50 focus:outline-none"
+                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col space-y-1">
                 <label className="font-semibold text-slate-600">Export Format</label>
-                <div className="flex border border-slate-200 rounded-lg overflow-hidden font-bold">
+                <div className="flex border border-[#cbd5e1] rounded-lg overflow-hidden font-bold">
                   <button
                     type="button"
                     onClick={() => setReportFormat('pdf')}
-                    className={`flex-1 py-2 text-center transition-all ${
+                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${
                       reportFormat === 'pdf' 
-                        ? 'bg-slate-900 text-white' 
+                        ? 'bg-[#059669] text-white shadow-inner' 
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
                     }`}
                   >
@@ -1057,9 +1057,9 @@ export default function AdminPanel() {
                   <button
                     type="button"
                     onClick={() => setReportFormat('csv')}
-                    className={`flex-1 py-2 text-center transition-all ${
+                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${
                       reportFormat === 'csv' 
-                        ? 'bg-slate-900 text-white' 
+                        ? 'bg-[#059669] text-white shadow-inner' 
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
                     }`}
                   >
@@ -1073,7 +1073,7 @@ export default function AdminPanel() {
               <button
                 type="submit"
                 disabled={generatingReport}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all shadow flex items-center justify-center gap-1.5"
+                className="flex-1 bg-[#059669] text-white py-2.5 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {generatingReport && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Generate Export</span>
@@ -1081,7 +1081,7 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={() => setReportEmployee(null)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl transition-all"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-[#0f172a] py-2.5 rounded-xl transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1090,13 +1090,13 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* Top Banner */}
-      <header className="bg-[#060317] text-white py-4 px-6 flex justify-between items-center shadow-md border-b border-[#2e3038]/40">
+      {/* Top Banner: Crisp White Navbar */}
+      <header className="bg-[#ffffff] text-[#0f172a] py-4 px-6 flex justify-between items-center shadow-sm border-b border-[#cbd5e1]/60 z-35">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg bg-[#5046e4] flex items-center justify-center text-white font-medium text-lg">
+          <div className="w-8 h-8 rounded-lg bg-[#059669] flex items-center justify-center text-white font-bold text-lg shadow-sm">
             N
           </div>
-          <span className="font-bold text-lg text-[#f4f0ff]">NGO Dashboard — Admin Oversight</span>
+          <span className="font-bold text-lg text-[#0f172a]">NGO Dashboard — Admin Oversight</span>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -1104,29 +1104,34 @@ export default function AdminPanel() {
               setAdminStatus('Check-In');
               setShowAdminCheckInModal(true);
             }}
-            className="flex items-center space-x-1.5 text-xs bg-[#5046e4] hover:bg-[#10093a] border border-[#9382ff]/30 text-white px-3.5 py-1.5 rounded-[5px] transition-all font-bold shadow-sm"
+            className="flex items-center space-x-1.5 text-xs bg-[#059669] hover:bg-[#047857] text-white px-3.5 py-1.5 rounded-[5px] transition-all font-bold shadow-sm cursor-pointer"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>My Attendance</span>
           </button>
           
           {/* Clerk Native Account Management UserButton integration! */}
-          <div className="w-8 h-8 rounded-full border border-[#2e3038]/60 overflow-hidden flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border border-[#cbd5e1] overflow-hidden flex items-center justify-center shadow-inner">
             <UserButton 
               appearance={{
+                variables: {
+                  colorPrimary: "#059669",
+                  colorBackground: "#ffffff",
+                  colorForeground: "#0f172a",
+                },
                 elements: {
                   avatarBox: "w-8 h-8 rounded-full",
-                  userButtonPopoverCard: "bg-[#060317] border border-[#2e3038]/50 text-white rounded-[16px] shadow-2xl",
+                  userButtonPopoverCard: "bg-[#ffffff] border border-[#cbd5e1] text-[#0f172a] rounded-[16px] shadow-2xl",
                 }
               }}
             />
           </div>
 
-          <span className="text-xs text-slate-300 font-medium bg-[#121317] px-3 py-1.5 rounded-full border border-[#2e3038]">
+          <span className="text-xs text-[#0f172a] font-medium bg-[#f8fafc] px-3 py-1.5 rounded-full border border-[#cbd5e1]">
             System Administrator
           </span>
           <SignOutButton>
-            <button className="flex items-center space-x-1.5 text-xs bg-[#121317] border border-[#2e3038] hover:bg-slate-700 text-slate-100 px-3 py-1.5 rounded-md transition-all font-semibold">
+            <button className="flex items-center space-x-1.5 text-xs bg-[#f8fafc] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 px-3 py-1.5 rounded-md transition-all font-semibold cursor-pointer">
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
             </button>
@@ -1135,9 +1140,9 @@ export default function AdminPanel() {
       </header>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col md:flex-row bg-[#030014]">
-        {/* Sidebar Tabs */}
-        <aside className="w-full md:w-64 bg-[#060317] border-r border-[#2e3038]/40 flex flex-col p-4 space-y-2">
+      <div className="flex-1 flex flex-col md:flex-row bg-[#f8fafc]">
+        {/* Sidebar Tabs: Pure White Sidebar */}
+        <aside className="w-full md:w-64 bg-[#ffffff] border-r border-[#cbd5e1]/60 flex flex-col p-4 space-y-2 shadow-sm">
           {[
             { id: 'overview', label: 'Live Headcount', icon: Users },
             { id: 'employees', label: 'Employees', icon: Users },
@@ -1150,10 +1155,10 @@ export default function AdminPanel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-[5px] transition-all ${
+                className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-[5px] transition-all cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-[#10093a] border border-[#9382ff]/30 text-white shadow-sm'
-                    : 'text-slate-400 hover:bg-slate-800/40'
+                    ? 'bg-[#f0fdf4] border border-[#bcf0da] text-[#059669] shadow-sm'
+                    : 'text-[#475569] hover:bg-slate-50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -1168,18 +1173,18 @@ export default function AdminPanel() {
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Stat Row */}
+            <div className="space-y-8 animate-fade-in">
+              {/* Stat Row: Rounded cards with subtle shadows */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { title: 'Present (In-Office)', count: presentCount, color: 'text-emerald-500 border-emerald-950 bg-emerald-950/20' },
-                  { title: 'Field / On-Site', count: fieldCount, color: 'text-blue-500 border-blue-950 bg-blue-950/20' },
-                  { title: 'Leave Logged', count: leaveCount, color: 'text-amber-500 border-amber-950 bg-amber-950/20' },
-                  { title: 'Absent / Unmarked', count: absentCount, color: 'text-rose-500 border-rose-950 bg-rose-950/20' },
+                  { title: 'Present (In-Office)', count: presentCount, color: 'text-emerald-600 border-emerald-100 bg-[#f0fdf4] shadow-sm' },
+                  { title: 'Field / On-Site', count: fieldCount, color: 'text-blue-600 border-blue-100 bg-blue-50/50 shadow-sm' },
+                  { title: 'Leave Logged', count: leaveCount, color: 'text-amber-600 border-amber-100 bg-amber-50/50 shadow-sm' },
+                  { title: 'Absent / Unmarked', count: absentCount, color: 'text-rose-600 border-rose-100 bg-rose-50/50 shadow-sm' },
                 ].map((stat, i) => (
-                  <div key={i} className={`p-4 rounded-[16px] border bg-[#060317] shadow-sm flex flex-col justify-between ${stat.color}`}>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#918ea0]">{stat.title}</span>
-                    <span className="text-3xl font-black mt-2">{stat.count}</span>
+                  <div key={i} className={`p-4 rounded-[16px] border bg-[#ffffff] flex flex-col justify-between ${stat.color}`}>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#475569]">{stat.title}</span>
+                    <span className="text-3xl font-black mt-2 leading-none">{stat.count}</span>
                   </div>
                 ))}
               </div>
@@ -1187,24 +1192,24 @@ export default function AdminPanel() {
               {/* Warnings and Live Logs */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Real-time Alerts */}
-                <div className="bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm md:col-span-1">
-                  <h3 className="font-bold text-rose-500 text-sm mb-4 flex items-center gap-2">
+                <div className="bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm md:col-span-1">
+                  <h3 className="font-bold text-rose-600 text-sm mb-4 flex items-center gap-2">
                     <Bell className="w-4 h-4" />
                     <span>Real-Time Alerts</span>
                   </h3>
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                     {notifications.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No security warnings triggered today.</p>
+                      <p className="text-xs text-[#475569] italic">No security warnings triggered today.</p>
                     ) : (
                       notifications.map(n => (
-                        <div key={n.id} className="p-3 bg-rose-950/20 border border-rose-100 rounded-lg text-xs space-y-1">
-                          <div className="flex justify-between items-center font-bold text-rose-200">
+                        <div key={n.id} className="p-3 bg-rose-55 border border-rose-200 rounded-lg text-xs space-y-1">
+                          <div className="flex justify-between items-center font-bold text-rose-950">
                             <span>{n.title}</span>
-                            <span className="text-[10px] text-rose-400 font-medium">
+                            <span className="text-[10px] text-rose-600 font-semibold">
                               {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-rose-300 leading-relaxed font-sans">{n.message}</p>
+                          <p className="text-rose-800 leading-relaxed font-sans">{n.message}</p>
                         </div>
                       ))
                     )}
@@ -1212,12 +1217,12 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Today's Timeline Log */}
-                <div className="bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm md:col-span-2">
-                  <h3 className="font-bold text-[#f4f0ff] text-sm mb-4">Today's Check-in Log</h3>
+                <div className="bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm md:col-span-2">
+                  <h3 className="font-bold text-[#0f172a] text-sm mb-4">Today's Check-in Log</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-[#2e3038]/40 text-[#a8a6b7] uppercase tracking-wider font-semibold">
+                        <tr className="border-b border-[#cbd5e1] text-[#475569] uppercase tracking-wider font-semibold">
                           <th className="py-3">Employee</th>
                           <th className="py-3">Department</th>
                           <th className="py-3">Status</th>
@@ -1225,27 +1230,27 @@ export default function AdminPanel() {
                           <th className="py-3">Geofence</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#2e3038]/20">
+                      <tbody className="divide-y divide-[#cbd5e1]/40">
                         {todayRecords.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-6 text-slate-400 italic text-center">No check-ins recorded yet today.</td>
                           </tr>
                         ) : (
                           todayRecords.map(rec => (
-                            <tr key={rec.id} className="hover:bg-slate-800/10">
-                              <td className="py-3 font-semibold text-[#f4f0ff]">
+                            <tr key={rec.id} className="hover:bg-slate-50">
+                              <td className="py-3 font-semibold text-[#0f172a]">
                                 {rec.profiles?.first_name} {rec.profiles?.last_name}
                               </td>
-                              <td className="py-3 text-[#a8a6b7]">{rec.profiles?.department}</td>
-                              <td className="py-3 font-bold text-[#f4f0ff]">{rec.status}</td>
-                              <td className="py-3 text-slate-400">
+                              <td className="py-3 text-[#475569]">{rec.profiles?.department}</td>
+                              <td className="py-3 font-bold text-[#0f172a]">{rec.status}</td>
+                              <td className="py-3 text-slate-500">
                                 {new Date(rec.check_in_time || rec.check_out_time || rec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </td>
                               <td className="py-3">
                                 {rec.is_out_of_geofence ? (
-                                  <span className="bg-rose-950/50 border border-rose-900/60 text-rose-300 font-bold px-2 py-0.5 rounded text-[10px]">VIOLATION</span>
+                                  <span className="bg-rose-50 border border-rose-200 text-rose-700 font-bold px-2 py-0.5 rounded text-[10px]">VIOLATION</span>
                                 ) : (
-                                  <span className="bg-emerald-950/50 border border-emerald-900/60 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]">OK</span>
+                                  <span className="bg-emerald-50 border border-emerald-200 text-[#059669] font-bold px-2 py-0.5 rounded text-[10px]">OK</span>
                                 )}
                               </td>
                             </tr>
@@ -1265,39 +1270,39 @@ export default function AdminPanel() {
               
               {/* PENDING APPROVALS SECTION */}
               {pendingAdmins.length > 0 && (
-                <div className="space-y-4 bg-amber-950/20 p-6 rounded-[16px] border border-amber-900/30 shadow-sm">
-                  <h3 className="font-bold text-amber-300 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <div className="space-y-4 bg-amber-50 p-6 rounded-[16px] border border-amber-200 shadow-sm">
+                  <h3 className="font-bold text-amber-900 text-sm flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span>Pending Administrator Approvals ({pendingAdmins.length})</span>
                   </h3>
-                  <p className="text-xs text-amber-400 leading-normal">
+                  <p className="text-xs text-amber-700 leading-normal">
                     These users selected "Administrator" at registration. They will have no system access until you approve their elevation.
                   </p>
-                  <div className="overflow-x-auto bg-[#060317] rounded-lg border border-[#2e3038]/40">
+                  <div className="overflow-x-auto bg-[#ffffff] rounded-lg border border-[#cbd5e1]">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-[#2e3038]/40 text-slate-400 bg-slate-900/20 uppercase tracking-wider font-semibold">
+                        <tr className="border-b border-[#cbd5e1] text-[#475569] bg-slate-50 uppercase tracking-wider font-semibold">
                           <th className="py-3 px-4">Name</th>
                           <th className="py-3 px-4">Email</th>
                           <th className="py-3 px-4">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#2e3038]/20">
+                      <tbody className="divide-y divide-[#cbd5e1]/40">
                         {pendingAdmins.map(p => (
                           <tr key={p.id}>
-                            <td className="py-3 px-4 font-bold text-[#f4f0ff]">{p.first_name} {p.last_name}</td>
-                            <td className="py-3 px-4 font-mono text-slate-400">{p.email}</td>
+                            <td className="py-3 px-4 font-bold text-[#0f172a]">{p.first_name} {p.last_name}</td>
+                            <td className="py-3 px-4 font-mono text-slate-500">{p.email}</td>
                             <td className="py-3 px-4 space-x-2">
                               <button 
                                 onClick={() => handleApproveAdmin(p.id)}
-                                className="inline-flex items-center space-x-1 bg-[#10093a] border border-[#9382ff]/30 text-white font-bold py-1 px-3 rounded-[5px] text-[10px]"
+                                className="inline-flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-bold py-1.5 px-3.5 rounded-[5px] text-[10px] cursor-pointer shadow-sm"
                               >
                                 <UserCheck className="w-3 h-3" />
                                 <span>Approve Admin</span>
                               </button>
                               <button 
                                 onClick={() => handleRejectAdmin(p.id)}
-                                className="inline-flex items-center space-x-1 bg-slate-200 text-slate-700 font-bold py-1 px-3 rounded-[5px] text-[10px]"
+                                className="inline-flex items-center space-x-1 bg-[#f8fafc] border border-[#cbd5e1] text-slate-700 font-bold py-1.5 px-3 rounded-[5px] text-[10px] cursor-pointer"
                               >
                                 <span>Set to Employee</span>
                               </button>
@@ -1311,12 +1316,12 @@ export default function AdminPanel() {
               )}
 
               {/* DIRECTORY SECTION */}
-              <div className="space-y-6 bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm">
+              <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-[#f4f0ff] text-base">NGO Employee Directory</h3>
+                  <h3 className="font-bold text-[#0f172a] text-base">NGO Employee Directory</h3>
                   <button 
                     onClick={() => setShowAddEmp(!showAddEmp)}
-                    className="flex items-center space-x-1 bg-[#10093a] border border-[#9382ff]/30 hover:bg-[#9382ff]/20 text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all"
+                    className="flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all cursor-pointer shadow-sm"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Register Employee Manual</span>
@@ -1324,59 +1329,59 @@ export default function AdminPanel() {
                 </div>
 
                 {showAddEmp && (
-                  <form onSubmit={handleAddEmployee} className="p-4 bg-[#030014] rounded-[16px] border border-[#2e3038]/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <form onSubmit={handleAddEmployee} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Clerk User ID (or unique handle)</label>
+                      <label className="font-semibold text-slate-600">Clerk User ID (or unique handle)</label>
                       <input 
                         value={newEmpId} onChange={(e) => setNewEmpId(e.target.value)}
                         placeholder="e.g. user_abc123" required
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff]"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Email Address</label>
+                      <label className="font-semibold text-slate-600">Email Address</label>
                       <input 
                         value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)}
                         placeholder="employee@ngo.org" type="email" required
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff]"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">First Name</label>
+                      <label className="font-semibold text-slate-600">First Name</label>
                       <input 
                         value={newEmpFirst} onChange={(e) => setNewEmpFirst(e.target.value)}
                         placeholder="First Name"
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff]"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Last Name</label>
+                      <label className="font-semibold text-slate-600">Last Name</label>
                       <input 
                         value={newEmpLast} onChange={(e) => setNewEmpLast(e.target.value)}
                         placeholder="Last Name"
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff]"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Department</label>
+                      <label className="font-semibold text-slate-600">Department</label>
                       <input 
                         value={newEmpDept} onChange={(e) => setNewEmpDept(e.target.value)}
                         placeholder="e.g. Field Ops, Finance"
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff]"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">System Role</label>
+                      <label className="font-semibold text-slate-600">System Role</label>
                       <select 
                         value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value as any)}
-                        className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white font-semibold focus:outline-none"
+                        className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                       >
                         <option value="employee">Employee (standard user)</option>
                         <option value="admin">Administrator (full access)</option>
                       </select>
                     </div>
                     <div className="md:col-span-3 flex justify-end">
-                      <button type="submit" className="bg-[#10093a] border border-[#9382ff]/30 text-white font-bold py-2 px-6 rounded-[5px] shadow transition-all hover:bg-[#9382ff]/20">
+                      <button type="submit" className="bg-[#059669] hover:bg-[#047857] text-white font-bold py-2 px-6 rounded-[5px] shadow cursor-pointer transition-all">
                         Save Database Profile
                       </button>
                     </div>
@@ -1386,7 +1391,7 @@ export default function AdminPanel() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-[#2e3038]/40 text-[#a8a6b7] uppercase tracking-wider font-semibold">
+                      <tr className="border-b border-[#cbd5e1] text-[#475569] uppercase tracking-wider font-semibold">
                         <th className="py-3">Name</th>
                         <th className="py-3">Email Address</th>
                         <th className="py-3">Department</th>
@@ -1395,26 +1400,26 @@ export default function AdminPanel() {
                         <th className="py-3 text-center">Reports (Range)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#2e3038]/20">
+                    <tbody className="divide-y divide-[#cbd5e1]/40">
                       {activeProfiles.map(p => (
                         <tr key={p.id}>
-                          <td className="py-3 font-semibold text-[#f4f0ff]">{p.first_name} {p.last_name}</td>
-                          <td className="py-3 text-[#a8a6b7] font-mono">{p.email}</td>
-                          <td className="py-3 text-[#a8a6b7]">{p.department || 'General'}</td>
+                          <td className="py-3 font-semibold text-[#0f172a]">{p.first_name} {p.last_name}</td>
+                          <td className="py-3 text-[#475569] font-mono">{p.email}</td>
+                          <td className="py-3 text-[#475569]">{p.department || 'General'}</td>
                           <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded-[5px] font-bold ${p.role === 'admin' ? 'bg-indigo-950/50 border border-indigo-900/60 text-indigo-300' : 'bg-slate-900/50 border border-[#2e3038] text-slate-300'}`}>
+                            <span className={`px-2 py-0.5 rounded-[5px] font-bold ${p.role === 'admin' ? 'bg-indigo-50 border border-indigo-200 text-indigo-700' : 'bg-slate-100 border border-[#cbd5e1] text-slate-700'}`}>
                               {p.role}
                             </span>
                           </td>
                           <td className="py-3">
-                            <span className="text-emerald-500 font-semibold">Active</span>
+                            <span className="text-emerald-600 font-semibold">Active</span>
                           </td>
                           <td className="py-3 text-center">
                             <button
                               onClick={() => handleOpenIndividualReportModal(p)}
-                              className="bg-[#08080a]/80 border border-[#2e3038]/60 hover:border-[#9382ff]/40 hover:bg-[#10093a]/40 text-slate-200 font-bold py-1.5 px-3 rounded-[5px] text-[10px] inline-flex items-center space-x-1 transition-all duration-200"
+                              className="bg-[#f8fafc] border border-[#cbd5e1] hover:border-[#059669]/50 hover:bg-[#f0fdf4] text-slate-700 font-bold py-1.5 px-3 rounded-[5px] text-[10px] inline-flex items-center space-x-1 transition-all duration-200 cursor-pointer"
                             >
-                              <Printer className="w-3 h-3 text-[#9382ff]" />
+                              <Printer className="w-3 h-3 text-[#059669]" />
                               <span>Generate Report</span>
                             </button>
                           </td>
@@ -1429,12 +1434,12 @@ export default function AdminPanel() {
 
           {/* TAB 3: ATTENDANCE HISTORY, PAGINATION & CORRECTIONS */}
           {activeTab === 'attendance' && (
-            <div className="space-y-6 bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm">
+            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm">
               <div className="flex justify-between items-center">
-                <h3 className="font-bold text-[#f4f0ff] text-base">Attendance Master Log</h3>
+                <h3 className="font-bold text-[#059669] text-base">Attendance Master Log</h3>
                 <button 
                   onClick={() => setShowManualLog(!showManualLog)}
-                  className="flex items-center space-x-1 bg-[#10093a] border border-[#9382ff]/30 hover:bg-[#9382ff]/20 text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all"
+                  className="flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Manual Attendance Log</span>
@@ -1442,12 +1447,12 @@ export default function AdminPanel() {
               </div>
 
               {showManualLog && (
-                <form onSubmit={handleManualAttendance} className="p-4 bg-[#030014] rounded-[16px] border border-[#2e3038]/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <form onSubmit={handleManualAttendance} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Select Employee</label>
+                    <label className="font-semibold text-slate-600">Select Employee</label>
                     <select 
                       value={manualProfileId} onChange={(e) => setManualProfileId(e.target.value)} required
-                      className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white font-semibold focus:outline-none"
+                      className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                     >
                       <option value="">-- Choose Employee --</option>
                       {activeProfiles.map(p => (
@@ -1456,10 +1461,10 @@ export default function AdminPanel() {
                     </select>
                   </div>
                   <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Status</label>
+                    <label className="font-semibold text-slate-600">Status</label>
                     <select 
                       value={manualStatus} onChange={(e) => setManualStatus(e.target.value)}
-                      className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white font-semibold focus:outline-none"
+                      className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                     >
                       <option value="Check-In">Check-In</option>
                       <option value="Check-Out">Check-Out</option>
@@ -1470,24 +1475,24 @@ export default function AdminPanel() {
                     </select>
                   </div>
                   <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Correction Date</label>
+                    <label className="font-semibold text-slate-600">Correction Date</label>
                     <input 
                       value={attendanceFilterDate} onChange={(e) => setAttendanceFilterDate(e.target.value)}
                       type="date" required
-                      className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none"
+                      className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
                     />
                   </div>
                   <div className="md:col-span-3 flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Note / Reason for Entry</label>
+                    <label className="font-semibold text-slate-600">Note / Reason for Entry</label>
                     <textarea 
                       value={manualNotes} onChange={(e) => setManualNotes(e.target.value)}
                       placeholder="e.g. Employee forgot card, internet failure in the field" required
-                      className="border border-[#2e3038] bg-[#08080a] p-2.5 rounded-[5px] text-white focus:outline-none"
+                      className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
                       rows={2}
                     />
                   </div>
                   <div className="md:col-span-3 flex justify-end">
-                    <button type="submit" className="bg-[#10093a] border border-[#9382ff]/30 text-white font-bold py-2 px-6 rounded-[5px] shadow transition-all hover:bg-[#9382ff]/20">
+                    <button type="submit" className="bg-[#059669] hover:bg-[#047857] text-white font-bold py-2 px-6 rounded-[5px] shadow cursor-pointer">
                       Log Correction
                     </button>
                   </div>
@@ -1504,7 +1509,7 @@ export default function AdminPanel() {
                       setCurrentPage(1); // Reset to page 1 on new search
                     }}
                     placeholder="Search by employee name or status..."
-                    className="pl-9 pr-4 py-2 border border-[#2e3038]/60 rounded-lg text-xs w-full focus:outline-none focus:ring-1 focus:ring-[#9382ff] bg-[#030014]"
+                    className="pl-9 pr-4 py-2 border border-[#cbd5e1] rounded-lg text-xs w-full focus:outline-none focus:ring-1 focus:ring-[#059669] bg-[#ffffff] text-[#0f172a]"
                   />
                 </div>
               </div>
@@ -1512,7 +1517,7 @@ export default function AdminPanel() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-[#2e3038]/40 text-[#a8a6b7] uppercase tracking-wider font-semibold">
+                    <tr className="border-b border-[#cbd5e1] text-[#475569] uppercase tracking-wider font-semibold">
                       <th className="py-3">Name</th>
                       <th className="py-3">Department</th>
                       <th className="py-3">Date</th>
@@ -1524,17 +1529,17 @@ export default function AdminPanel() {
                       <th className="py-3 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#2e3038]/20">
+                  <tbody className="divide-y divide-[#cbd5e1]/40">
                     {paginatedAttendance.map(rec => (
-                      <tr key={rec.id} className="hover:bg-slate-800/10">
-                        <td className="py-3 font-semibold text-[#f4f0ff]">
+                      <tr key={rec.id} className="hover:bg-slate-50">
+                        <td className="py-3 font-semibold text-[#0f172a]">
                           {rec.profiles?.first_name} {rec.profiles?.last_name}
                         </td>
-                        <td className="py-3 text-[#a8a6b7]">{rec.profiles?.department || 'General'}</td>
-                        <td className="py-3 font-medium text-slate-400">{rec.date}</td>
-                        <td className="py-3 font-bold text-[#f4f0ff]">{rec.status}</td>
-                        <td className="py-3 text-slate-400 italic max-w-xs truncate" title={rec.notes}>
-                          {rec.notes || <span className="text-slate-500 italic">No notes added</span>}
+                        <td className="py-3 text-slate-500">{rec.profiles?.department || 'General'}</td>
+                        <td className="py-3 font-medium text-slate-600">{rec.date}</td>
+                        <td className="py-3 font-bold text-[#0f172a]">{rec.status}</td>
+                        <td className="py-3 text-slate-600 italic max-w-xs truncate" title={rec.notes}>
+                          {rec.notes || <span className="text-slate-400 italic">No notes added</span>}
                         </td>
                         <td className="py-3">
                           {rec.check_in_lat ? (
@@ -1542,7 +1547,7 @@ export default function AdminPanel() {
                               href={`https://www.google.com/maps/search/?api=1&query=${rec.check_in_lat},${rec.check_in_lng}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-1 text-[#9382ff] hover:underline font-bold"
+                              className="inline-flex items-center space-x-1 text-[#059669] hover:underline font-bold"
                             >
                               <MapPin className="w-3.5 h-3.5" />
                               <span>Maps Link</span>
@@ -1554,23 +1559,23 @@ export default function AdminPanel() {
                         <td className="py-3 font-mono text-slate-500">{rec.gps_accuracy ? `±${Math.round(rec.gps_accuracy)}m` : 'N/A'}</td>
                         <td className="py-3 space-x-1.5">
                           {rec.is_out_of_geofence && (
-                            <span className="bg-rose-950/50 border border-rose-900/60 text-rose-300 font-bold px-1.5 py-0.5 rounded text-[10px]">GEOFENCE</span>
+                            <span className="bg-rose-50 border border-rose-200 text-rose-700 font-bold px-1.5 py-0.5 rounded text-[10px]">GEOFENCE</span>
                           )}
                           {rec.is_late && (
-                            <span className="bg-amber-950/50 border border-amber-900/60 text-amber-300 font-bold px-1.5 py-0.5 rounded text-[10px]">LATE</span>
+                            <span className="bg-amber-50 border border-amber-200 text-amber-700 font-bold px-1.5 py-0.5 rounded text-[10px]">LATE</span>
                           )}
                         </td>
                         <td className="py-3 text-center space-x-2">
                           <button
                             onClick={() => startEditingRecord(rec)}
-                            className="p-1 text-slate-400 hover:text-[#9382ff] hover:bg-slate-800 rounded transition-all inline-flex"
+                            className="p-1 text-slate-500 hover:text-[#059669] hover:bg-emerald-50 rounded transition-all inline-flex cursor-pointer"
                             title="Edit / Correct record"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteRecord(rec.id)}
-                            className="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-950 rounded transition-all inline-flex"
+                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-all inline-flex cursor-pointer"
                             title="Delete log permanently"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1584,7 +1589,7 @@ export default function AdminPanel() {
 
               {/* TABLE PAGINATION CONTROLS */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-[#2e3038]/40 pt-4 text-xs font-semibold text-slate-500">
+                <div className="flex items-center justify-between border-t border-[#cbd5e1] pt-4 text-xs font-semibold text-slate-500">
                   <span>
                     Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredAttendance.length)} of {filteredAttendance.length} entries
                   </span>
@@ -1592,7 +1597,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="p-2 border border-[#2e3038]/60 rounded-lg hover:bg-[#060317] disabled:opacity-30 disabled:hover:bg-transparent transition-all text-[#f4f0ff]"
+                      className="p-2 border border-[#cbd5e1] rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all text-[#0f172a]"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -1600,10 +1605,10 @@ export default function AdminPanel() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1.5 rounded-lg border transition-all ${
+                        className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
                           currentPage === pageNum 
-                            ? 'bg-[#10093a] border-[#9382ff]/40 text-[#f4f0ff] shadow-sm' 
-                            : 'border-[#2e3038]/60 hover:bg-[#060317] text-[#acafb9]'
+                            ? 'bg-[#059669] border-[#059669] text-white shadow-sm' 
+                            : 'border-[#cbd5e1] hover:bg-slate-50 text-[#475569]'
                         }`}
                       >
                         {pageNum}
@@ -1612,7 +1617,7 @@ export default function AdminPanel() {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="p-2 border border-[#2e3038]/60 rounded-lg hover:bg-[#060317] disabled:opacity-30 disabled:hover:bg-transparent transition-all text-[#f4f0ff]"
+                      className="p-2 border border-[#cbd5e1] rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all text-[#0f172a]"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -1624,24 +1629,24 @@ export default function AdminPanel() {
 
           {/* TAB 4: BRANCH & GEOFENCE SETTINGS */}
           {activeTab === 'settings' && (
-            <div className="max-w-xl bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm space-y-6">
-              <h3 className="font-bold text-[#f4f0ff] text-base">Global Branch Configurations</h3>
+            <div className="max-w-xl bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm space-y-6">
+              <h3 className="font-bold text-[#0f172a] text-base">Global Branch Configurations</h3>
               <form onSubmit={handleUpdateSettings} className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Office Latitude</label>
+                    <label className="font-semibold text-slate-600">Office Latitude</label>
                     <input 
                       value={officeLat} onChange={(e) => setOfficeLat(e.target.value)}
                       placeholder="e.g. 33.6844" type="number" step="any" required
-                      className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                      className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
                     />
                   </div>
                   <div className="flex flex-col space-y-1">
-                    <label className="font-semibold text-slate-300">Office Longitude</label>
+                    <label className="font-semibold text-slate-600">Office Longitude</label>
                     <input 
                       value={officeLng} onChange={(e) => setOfficeLng(e.target.value)}
                       placeholder="e.g. 73.0479" type="number" step="any" required
-                      className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                      className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
                     />
                   </div>
                 </div>
@@ -1651,7 +1656,7 @@ export default function AdminPanel() {
                   <input 
                     value={radius} onChange={(e) => setRadius(e.target.value)}
                     placeholder="e.g. 100" type="number" required
-                    className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                    className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
                   />
                   <p className="text-[10px] text-slate-400 leading-normal mt-0.5">
                     Any check-in placed farther than this distance from coordinates will log a warning notification flag.
@@ -1663,14 +1668,14 @@ export default function AdminPanel() {
                   <input 
                     value={startTime} onChange={(e) => setStartTime(e.target.value)}
                     type="time" step="1" required
-                    className="border border-[#2e3038] bg-[#030014] text-white focus:outline-none focus:ring-1 focus:ring-[#9382ff] font-mono"
+                    className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
                   />
                   <p className="text-[10px] text-slate-400 leading-normal mt-0.5">
                     Check-Ins placed past this limit trigger a late registration alert.
                   </p>
                 </div>
 
-                <button type="submit" className="w-full bg-[#10093a] border border-[#9382ff]/30 text-white font-bold py-3 rounded-[5px] hover:bg-[#9382ff]/20 transition-all">
+                <button type="submit" className="w-full bg-[#059669] hover:bg-[#047857] text-white font-bold py-3 rounded-[5px] shadow cursor-pointer transition-all">
                   Save Changes to Settings
                 </button>
               </form>
@@ -1679,24 +1684,24 @@ export default function AdminPanel() {
 
           {/* TAB 5: REPORTS & EXPORTS */}
           {activeTab === 'reports' && (
-            <div className="max-w-xl bg-[#060317] p-6 rounded-[16px] border border-[#2e3038]/40 shadow-sm space-y-6">
-              <h3 className="font-bold text-[#f4f0ff] text-base">Export Attendance Records</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+            <div className="max-w-xl bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm space-y-6">
+              <h3 className="font-bold text-[#0f172a] text-base">Export Attendance Records</h3>
+              <p className="text-xs text-[#475569] leading-relaxed">
                 Download structured data logs including timestamps, geofence validations, accuracy levels, and admin corrections compiled cleanly into CSV formats compatible with Excel, Google Sheets, and LibreOffice.
               </p>
               
               <div className="grid grid-cols-1 gap-4 text-xs">
                 {/* Daily export summary row */}
-                <div className="p-4 bg-[#030014] border border-[#2e3038]/50 rounded-[16px] flex items-center justify-between">
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-[#f4f0ff]">Daily Log Summary</h4>
-                    <p className="text-[10px] text-[#acafb9]">Export active logs for current calendar day.</p>
+                    <h4 className="font-bold text-[#0f172a]">Daily Log Summary</h4>
+                    <p className="text-[10px] text-[#475569]">Export active logs for current calendar day.</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button onClick={() => handleExportCSV('daily')} className="bg-[#060317] hover:bg-slate-800 border border-[#2e3038]/60 text-slate-200 font-semibold py-2 px-4 rounded-[5px] transition-colors">
+                    <button onClick={() => handleExportCSV('daily')} className="bg-[#ffffff] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 font-semibold py-2 px-4 rounded-[5px] transition-colors cursor-pointer">
                       CSV
                     </button>
-                    <button onClick={() => handleExportPDF('daily')} className="bg-[#10093a] border border-[#9382ff]/30 hover:bg-[#9382ff]/20 text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors">
+                    <button onClick={() => handleExportPDF('daily')} className="bg-[#059669] hover:bg-[#047857] text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors cursor-pointer">
                       <Printer className="w-3.5 h-3.5" />
                       <span>PDF</span>
                     </button>
@@ -1704,16 +1709,16 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Weekly export summary row */}
-                <div className="p-4 bg-[#030014] border border-[#2e3038]/50 rounded-[16px] flex items-center justify-between">
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-[#f4f0ff]">Weekly Breakdown</h4>
                     <p className="text-[10px] text-[#acafb9]">Export active logs for previous 7 calendar days.</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button onClick={() => handleExportCSV('weekly')} className="bg-[#060317] hover:bg-slate-800 border border-[#2e3038]/60 text-slate-200 font-semibold py-2 px-4 rounded-[5px] transition-colors">
+                    <button onClick={() => handleExportCSV('weekly')} className="bg-[#ffffff] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 font-semibold py-2 px-4 rounded-[5px] transition-colors cursor-pointer">
                       CSV
                     </button>
-                    <button onClick={() => handleExportPDF('weekly')} className="bg-[#10093a] border border-[#9382ff]/30 hover:bg-[#9382ff]/20 text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors">
+                    <button onClick={() => handleExportPDF('weekly')} className="bg-[#059669] hover:bg-[#047857] text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors cursor-pointer">
                       <Printer className="w-3.5 h-3.5" />
                       <span>PDF</span>
                     </button>
@@ -1721,16 +1726,16 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Monthly export summary row */}
-                <div className="p-4 bg-[#030014] border border-[#2e3038]/50 rounded-[16px] flex items-center justify-between">
+                <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-[#f4f0ff]">Monthly Full Registry</h4>
                     <p className="text-[10px] text-[#acafb9]">Export active logs for previous 30 calendar days.</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button onClick={() => handleExportCSV('monthly')} className="bg-[#060317] hover:bg-slate-800 border border-[#2e3038]/60 text-slate-200 font-semibold py-2 px-4 rounded-[5px] transition-colors">
+                    <button onClick={() => handleExportCSV('monthly')} className="bg-[#ffffff] hover:bg-slate-100 border border-[#cbd5e1] text-slate-700 font-semibold py-2 px-4 rounded-[5px] transition-colors cursor-pointer">
                       CSV
                     </button>
-                    <button onClick={() => handleExportPDF('monthly')} className="bg-[#10093a] border border-[#9382ff]/30 hover:bg-[#9382ff]/20 text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors">
+                    <button onClick={() => handleExportPDF('monthly')} className="bg-[#059669] hover:bg-[#047857] text-white font-semibold py-2 px-4 rounded-[5px] flex items-center space-x-1.5 transition-colors cursor-pointer">
                       <Printer className="w-3.5 h-3.5" />
                       <span>PDF</span>
                     </button>

@@ -1,14 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Playfair_Display, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { Users, Settings, ArrowRight } from 'lucide-react';
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,18 +29,18 @@ export default function RoleSelection() {
           
           {/* Header Section */}
           <header className="flex flex-col items-center text-center gap-6">
-            {/* Logo Mark: Custom Emerald Box */}
-            <div className={`${playfair.className} w-10 h-10 flex items-center justify-center bg-[#ffffff] border border-[#059669] rounded-[8px] text-[#059669] font-bold text-xl shadow-sm`}>
-              N
+            {/* Logo Mark: Swapped to your real PPI Logo! */}
+            <div className="w-10 h-10 flex items-center justify-center bg-[#ffffff] border border-[#e2e8f0] rounded-[8px] p-1 shadow-sm">
+              <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
             </div>
             
             {/* Titles */}
             <div className="flex flex-col gap-2">
-              <h1 className={`${playfair.className} text-[24px] font-normal text-[#0f172a] tracking-tight`}>
+              <h1 className="text-[24px] font-bold text-[#0f172a] tracking-tight">
                 Choose Portal Access
               </h1>
               <p className="text-[12px] leading-relaxed text-[#475569] max-w-xs mx-auto">
-                Please select your primary operational role inside the NGO.
+                Please select your primary operational role inside the PPI.
               </p>
             </div>
           </header>

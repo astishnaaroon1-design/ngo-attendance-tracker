@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useUser, SignOutButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { getSupabaseClient } from '../lib/supabase'; // Correct relative import (1 step up)
-import { logAttendanceAction } from '../actions/attendance'; // Correct relative import (1 step up)
+import { getSupabaseClient } from '../lib/supabase';
+import { logAttendanceAction } from '../actions/attendance';
 import { MapPin, CheckCircle, ShieldAlert, LogOut, Loader2, Calendar } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -220,13 +220,13 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] pb-12">
-      {/* Navbar Header */}
+      {/* Navbar Header: Swapped Logo */}
       <header className="bg-[#ffffff] border-b border-[#cbd5e1]/60 py-4 px-6 flex justify-between items-center shadow-sm">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg bg-[#059669] flex items-center justify-center text-white font-bold text-lg shadow-sm">
-            N
+          <div className="w-8 h-8 rounded-lg bg-[#ffffff] border border-[#e2e8f0] p-1 flex items-center justify-center shadow-sm">
+            <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="font-bold text-[#0f172a] text-lg">NGO Portal</span>
+          <span className="font-bold text-[#0f172a] text-lg">PPI Portal</span>
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-[#475569] font-medium">Welcome, {user?.fullName}</span>

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NGO Attendance Tracker",
+  title: "PPI Attendance Tracker", // Updated App Name cleanly here!
   description: "Digital Attendance and Field Tracking Portal",
 };
 

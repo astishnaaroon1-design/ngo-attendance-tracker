@@ -3,8 +3,14 @@
    ======================================================== */
 @import "tailwindcss";
 
+/* Force light background and dark charcoal text by default */
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
 /* ========================================================
-   REFLCT NOIR: CLERK WHITE-LABEL OVERRIDES
+   CORE CLERK WHITE-LABEL OVERRIDES
    Safely hides branding and development-mode badges
    ======================================================== */
 

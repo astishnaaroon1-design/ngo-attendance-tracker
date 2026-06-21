@@ -1129,7 +1129,7 @@ export default function AdminPanel() {
           <img 
             src="/logo.png" 
             alt="PPI Logo" 
-            className="w-[140px] -mr-[30px] max-w-none" 
+            className="w-[100px] -mr-[20px] -my-[15px] max-w-none" 
           />
           <span className="text-[1.125rem] font-bold text-[#0f172a] whitespace-nowrap">
             PPI Admin Portal

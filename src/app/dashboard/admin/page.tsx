@@ -1125,12 +1125,15 @@ export default function AdminPanel() {
 
       {/* Top Banner: Crisp White Navbar */}
       <header className="bg-[#ffffff] text-[#0f172a] py-4 px-6 flex justify-between items-center shadow-sm border-b border-[#cbd5e1]/60 z-35">
-        <div className="flex items-center space-x-2">
-          {/* Logo Mark: Swapped Logo */}
-          <div className="w-8 h-8 rounded-lg bg-[#ffffff] border border-[#e2e8f0] p-1 flex items-center justify-center shadow-sm">
-            <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
-          </div>
-          <span className="font-bold text-lg text-[#0f172a]">PPI admin portal</span> {/* Updated Name dynamically as lowercase requested! */}
+        <div className="flex items-center gap-0 bg-transparent border-none p-0">
+          <img 
+            src="/logo.png" 
+            alt="PPI Logo" 
+            className="w-[140px] -mr-[30px] max-w-none" 
+          />
+          <span className="text-[1.125rem] font-bold text-[#0f172a] whitespace-nowrap">
+            PPI Admin Portal
+          </span>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -1810,7 +1813,7 @@ export default function AdminPanel() {
               </p>
               
               <div className="grid grid-cols-1 gap-4 text-xs">
-                {/* Daily export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                {/* Daily export summary row */}
                 <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
                     <h4 className="font-bold text-[#0f172a]">Daily Log Summary</h4>
@@ -1827,7 +1830,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Weekly export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                {/* Weekly export summary row */}
                 <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
                     <h4 className="font-bold text-[#0f172a]">Weekly Breakdown</h4>
@@ -1844,7 +1847,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Monthly export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
+                {/* Monthly export summary row */}
                 <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
                   <div>
                     <h4 className="font-bold text-[#0f172a]">Monthly Full Registry</h4>

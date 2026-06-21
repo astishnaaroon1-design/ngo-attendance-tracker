@@ -15,15 +15,15 @@ const inter = Inter({
 
 export default function Home() {
   return (
-    <div className={`${inter.className} relative min-h-screen overflow-hidden flex flex-col items-center justify-between p-6 sm:p-12 md:p-24 bg-[#030014] text-[#f4f0ff] antialiased`}>
+    <div className={`${inter.className} relative min-h-screen overflow-hidden flex flex-col items-center justify-between p-6 sm:p-12 md:p-24 bg-[#f8fafc] text-[#0f172a] antialiased`}>
       
       {/* BACKGROUND GLOW */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#9382ff]/10 blur-[130px] rounded-full pointer-events-none z-0" />
-      <div className="absolute inset-0 z-0 opacity-40">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#059669]/5 blur-[130px] rounded-full pointer-events-none z-0" />
+      <div className="absolute inset-0 z-0">
         <PixelBlast
           variant="circle"
           pixelSize={5}
-          color="#9382ff"
+          color="#059669" // Replaced purple with green to match the light theme!
           patternScale={0.75}
           patternDensity={0.45}
           enableRipples
@@ -41,34 +41,25 @@ export default function Home() {
         
         {/* HeroSection */}
         <section className="flex flex-col items-center text-center space-y-8 w-full">
-          {/* Top Logo Emblem: Swapped to your real PPI Logo! */}
-          <div className="w-16 h-16 bg-[#ffffff] border border-[#cbd5e1] rounded-[8px] flex items-center justify-center p-1.5 shadow-sm">
+          {/* Top Logo Emblem: Made significantly bigger! (w-28 h-28) */}
+          <div className="w-28 h-28 bg-[#ffffff] border border-[#cbd5e1] rounded-[12px] flex items-center justify-center p-3 shadow-md">
             <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
           </div>
 
           {/* Hero Copy */}
           <div className="space-y-4 max-w-2xl">
-            <h1 className="text-4xl md:text-[56px] leading-tight font-medium text-[#f4f0ff] tracking-tight">
+            <h1 className="text-4xl md:text-[56px] leading-tight font-extrabold text-[#0f172a] tracking-tight">
               PPI Attendance <br />
-              <span 
-                style={{
-                  backgroundImage: 'linear-gradient(90.01deg, #e59cff 0.01%, #ba9cff 50.01%, #9cb2ff 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-                className="inline-block"
-              >
-                Tracking Portal
-              </span>
+              <span className="text-[#059669] italic font-semibold">Tracking Portal</span>
             </h1>
-            <p className="text-[15px] text-[#a8a6b7] max-w-lg leading-relaxed mx-auto">
+            <p className="text-[15px] text-[#475569] max-w-lg leading-relaxed mx-auto">
               Secure, verified, and automated attendance logging for physical offices and remote field visits.
             </p>
           </div>
 
           {/* CTA Button */}
           <Link 
-            className="inline-flex items-center justify-center px-6 py-3 bg-[#5046e4] text-[#ffffff] font-medium text-sm rounded-[5px] hover:bg-[#10093a] border border-[#9382ff]/30 transition-all duration-300 shadow" 
+            className="inline-flex items-center justify-center px-6 py-3 bg-[#059669] text-[#ffffff] font-bold text-sm rounded-[5px] hover:bg-[#047857] transition-all duration-300 shadow" 
             data-purpose="cta-button" 
             href="/role-selection"
           >
@@ -80,7 +71,7 @@ export default function Home() {
         </section>
 
         {/* Divider */}
-        <hr className="w-full border-t border-[#464853] max-w-3xl opacity-50" data-purpose="section-divider"/>
+        <hr className="w-full border-t border-[#cbd5e1] max-w-3xl opacity-60" data-purpose="section-divider"/>
 
         {/* FeaturesSection */}
         <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-4xl px-4" data-purpose="feature-highlights">

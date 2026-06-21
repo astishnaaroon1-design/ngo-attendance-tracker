@@ -29,8 +29,8 @@ export default function RoleSelection() {
           
           {/* Header Section */}
           <header className="flex flex-col items-center text-center gap-6">
-            {/* Logo Mark: Swapped to your real PPI Logo! */}
-            <div className="w-10 h-10 flex items-center justify-center bg-[#ffffff] border border-[#e2e8f0] rounded-[8px] p-1 shadow-sm">
+            {/* Logo Mark: Swapped to your real PPI Logo with better padding */}
+            <div className="w-12 h-12 flex items-center justify-center bg-[#ffffff] border border-[#e2e8f0] rounded-[8px] p-1.5 shadow-sm">
               <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
             </div>
             

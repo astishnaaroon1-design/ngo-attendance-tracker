@@ -5,8 +5,8 @@ import { useUser, SignOutButton, UserButton, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient } from '../../lib/supabase';
 import { logAttendanceAction } from '../../actions/attendance';
-import {
-  Users, Calendar, Settings, FileSpreadsheet, Bell,
+import { 
+  Users, Calendar, Settings, FileSpreadsheet, Bell, 
   Loader2, LogOut, Search, MapPin, Check, Edit, Plus, AlertTriangle, Trash2, UserCheck, CheckCircle2, Printer, ChevronLeft, ChevronRight, Filter
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -94,7 +94,7 @@ export default function AdminPanel() {
     try {
       setLoading(true);
       const email = user?.primaryEmailAddress?.emailAddress || '';
-
+      
       const designatedRole = email.toLowerCase() === 'astishna09@gmail.com' ? 'admin' : 'employee';
 
       const token = await getToken({ template: 'supabase' });
@@ -284,7 +284,7 @@ export default function AdminPanel() {
     try {
       const token = await getToken({ template: 'supabase' });
       const client = getSupabaseClient(token);
-
+      
       const { error } = await client
         .from('attendance_records')
         .update({
@@ -315,7 +315,7 @@ export default function AdminPanel() {
     try {
       const token = await getToken({ template: 'supabase' });
       const client = getSupabaseClient(token);
-
+      
       const { error } = await client
         .from('attendance_records')
         .delete()
@@ -379,9 +379,9 @@ export default function AdminPanel() {
           rec.notes || ''
         ]);
 
-        let csvContent = "data:text/csv;charset=utf-8,"
+        let csvContent = "data:text/csv;charset=utf-8," 
           + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
-
+        
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -406,8 +406,8 @@ export default function AdminPanel() {
           <tr>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">${rec.date}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #0f172a;">${rec.status}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_out_time ? new Date(rec.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_in_time ? new Date(rec.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${rec.check_out_time ? new Date(rec.check_out_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-style: italic; color: #475569; max-width: 220px; word-break: break-all;">${rec.notes || '-'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_out_of_geofence ? '#e11d48' : '#059669'};">${rec.is_out_of_geofence ? 'Out of Geofence' : 'OK'}</td>
             <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: ${rec.is_late ? '#d97706' : '#64748b'};">${rec.is_late ? 'Late' : 'On-Time'}</td>
@@ -440,7 +440,7 @@ export default function AdminPanel() {
                   <p style="margin: 2px 0 0 0;">Department: ${reportEmployee.department || 'General'} | Range Selected: ${reportStartDate} to ${reportEndDate}</p>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-weight: 900; color: #059669; font-size: 12px;">PPI Attendance Portal</div>
+                  <div style="font-weight: 900; color: #059669; font-size: 12px;">NGO Attendance Portal</div>
                   <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Verifiable Cloud Records</div>
                 </div>
               </div>
@@ -663,9 +663,9 @@ export default function AdminPanel() {
       rec.notes || ''
     ]);
 
-    let csvContent = "data:text/csv;charset=utf-8,"
+    let csvContent = "data:text/csv;charset=utf-8," 
       + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
-
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -820,7 +820,7 @@ export default function AdminPanel() {
   const activeProfiles = profiles.filter(p => p.role !== 'pending_admin');
 
   // Filter today's alerts only for the Main Overview
-  const todayNotifications = notifications.filter(n =>
+  const todayNotifications = notifications.filter(n => 
     new Date(n.created_at).toISOString().split('T')[0] === todayStr
   );
 
@@ -896,7 +896,7 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] flex flex-col relative antialiased selection:bg-[#059669]/10 selection:text-[#059669]">
-
+      
       {/* DAILY CHECK-IN MODAL POPUP FOR ADMIN */}
       {showAdminCheckInModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -919,10 +919,11 @@ export default function AdminPanel() {
                     <button
                       key={opt}
                       onClick={() => setAdminStatus(opt)}
-                      className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${adminStatus === opt
-                          ? 'border-[#059669] bg-[#f0fdf4] text-[#059669] ring-2 ring-[#059669]/20'
+                      className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+                        adminStatus === opt 
+                          ? 'border-[#059669] bg-[#f0fdf4] text-[#059669] ring-2 ring-[#059669]/20' 
                           : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                        }`}
+                      }`}
                     >
                       {opt}
                     </button>
@@ -975,13 +976,13 @@ export default function AdminPanel() {
           <form onSubmit={handleUpdateRecord} className="bg-white rounded-[24px] p-6 max-w-sm w-full border border-[#cbd5e1] shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-[#0f172a]">Correct Attendance Log</h3>
-              <p className="text-[10px] text-[#475569] mt-0.5">Updating entry for {editingRecord.profiles?.first_name} {editingRecord.profiles?.last_name}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Updating entry for {editingRecord.profiles?.first_name} {editingRecord.profiles?.last_name}</p>
             </div>
 
             <div className="space-y-3.5 text-xs">
               <div className="flex flex-col space-y-1">
                 <label className="font-semibold text-slate-600">Date</label>
-                <input
+                <input 
                   type="date"
                   value={editDate}
                   onChange={(e) => setEditingDate(e.target.value)}
@@ -992,7 +993,7 @@ export default function AdminPanel() {
 
               <div className="flex flex-col space-y-1">
                 <label className="font-semibold text-slate-600">Status Type</label>
-                <select
+                <select 
                   value={editStatus}
                   onChange={(e) => setEditingStatus(e.target.value)}
                   required
@@ -1009,7 +1010,7 @@ export default function AdminPanel() {
 
               <div className="flex flex-col space-y-1">
                 <label className="font-semibold text-[#475569]">Note / Reason for Modification</label>
-                <textarea
+                <textarea 
                   value={editNotes}
                   onChange={(e) => setEditingNotes(e.target.value)}
                   placeholder="Explain why this correction was made..."
@@ -1023,7 +1024,7 @@ export default function AdminPanel() {
             <div className="flex gap-2.5 text-xs font-semibold pt-2">
               <button
                 type="submit"
-                className="flex-1 bg-[#059669] hover:bg-[#047857] text-white py-2.5 rounded-xl transition-all shadow cursor-pointer"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all shadow cursor-pointer"
               >
                 Save Correction
               </button>
@@ -1045,29 +1046,29 @@ export default function AdminPanel() {
           <form onSubmit={handleGenerateIndividualReport} className="bg-white rounded-[24px] p-6 max-w-sm w-full border border-[#cbd5e1] shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-[#0f172a]">Generate Staff Report</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Creating manual date ledger for {reportEmployee.first_name} {reportEmployee.last_name}</p>
+              <p className="text-[10px] text-[#cbd5e1] mt-0.5">Creating manual date ledger for {reportEmployee.first_name} {reportEmployee.last_name}</p>
             </div>
 
             <div className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-slate-600">Start Date</label>
-                  <input
+                  <input 
                     type="date"
                     value={reportStartDate}
                     onChange={(e) => setReportStartDate(e.target.value)}
                     required
-                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
+                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#059669]"
                   />
                 </div>
                 <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-slate-600">End Date</label>
-                  <input
+                  <input 
                     type="date"
                     value={reportEndDate}
                     onChange={(e) => setReportEndDate(e.target.value)}
                     required
-                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-[#f8fafc] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
+                    className="border border-[#cbd5e1] p-2.5 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-[#059669]"
                   />
                 </div>
               </div>
@@ -1078,20 +1079,22 @@ export default function AdminPanel() {
                   <button
                     type="button"
                     onClick={() => setReportFormat('pdf')}
-                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${reportFormat === 'pdf'
-                        ? 'bg-[#059669] text-white shadow-inner'
+                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${
+                      reportFormat === 'pdf' 
+                        ? 'bg-[#059669] text-white shadow-inner' 
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-                      }`}
+                    }`}
                   >
                     Printable PDF
                   </button>
                   <button
                     type="button"
                     onClick={() => setReportFormat('csv')}
-                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${reportFormat === 'csv'
-                        ? 'bg-[#059669] text-white shadow-inner'
+                    className={`flex-1 py-2 text-center transition-all cursor-pointer ${
+                      reportFormat === 'csv' 
+                        ? 'bg-[#059669] text-white shadow-inner' 
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600'
-                      }`}
+                    }`}
                   >
                     CSV File
                   </button>
@@ -1127,7 +1130,7 @@ export default function AdminPanel() {
           <div className="w-8 h-8 rounded-lg bg-[#ffffff] border border-[#e2e8f0] p-1 flex items-center justify-center shadow-sm">
             <img src="/logo.png" alt="PPI Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="font-bold text-lg text-[#0f172a]">PPI Dashboard — Admin Oversight</span>
+          <span className="font-bold text-lg text-[#0f172a]">PPI admin portal</span> {/* Updated Name dynamically as lowercase requested! */}
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -1140,10 +1143,10 @@ export default function AdminPanel() {
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>My Attendance</span>
           </button>
-
+          
           {/* Clerk Native Account Management UserButton integration! */}
           <div className="w-8 h-8 rounded-full border border-[#cbd5e1] overflow-hidden flex items-center justify-center shadow-inner">
-            <UserButton
+            <UserButton 
               appearance={{
                 variables: {
                   colorPrimary: "#059669",
@@ -1187,10 +1190,11 @@ export default function AdminPanel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-[5px] transition-all cursor-pointer ${activeTab === tab.id
+                className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-semibold rounded-[5px] transition-all cursor-pointer ${
+                  activeTab === tab.id
                     ? 'bg-[#f0fdf4] border border-[#bcf0da] text-[#059669] shadow-sm'
                     : 'text-[#475569] hover:bg-slate-50'
-                  }`}
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
@@ -1201,7 +1205,7 @@ export default function AdminPanel() {
 
         {/* Dashboard Content Panel */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-
+          
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-8">
@@ -1298,7 +1302,7 @@ export default function AdminPanel() {
           {/* TAB 2: EMPLOYEE DIRECTORY & APPROVALS */}
           {activeTab === 'employees' && (
             <div className="space-y-8">
-
+              
               {/* PENDING APPROVALS SECTION */}
               {pendingAdmins.length > 0 && (
                 <div className="space-y-4 bg-amber-50 p-6 rounded-[16px] border border-amber-200 shadow-sm">
@@ -1324,14 +1328,14 @@ export default function AdminPanel() {
                             <td className="py-3 px-4 font-bold text-[#0f172a]">{p.first_name} {p.last_name}</td>
                             <td className="py-3 px-4 font-mono text-slate-500">{p.email}</td>
                             <td className="py-3 px-4 space-x-2">
-                              <button
+                              <button 
                                 onClick={() => handleApproveAdmin(p.id)}
                                 className="inline-flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-bold py-1.5 px-3.5 rounded-[5px] text-[10px] cursor-pointer shadow-sm"
                               >
                                 <UserCheck className="w-3 h-3" />
                                 <span>Approve Admin</span>
                               </button>
-                              <button
+                              <button 
                                 onClick={() => handleRejectAdmin(p.id)}
                                 className="inline-flex items-center space-x-1 bg-slate-200 text-slate-700 font-bold py-1 px-3 rounded-[5px] text-[10px] cursor-pointer"
                               >
@@ -1350,7 +1354,7 @@ export default function AdminPanel() {
               <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-[#0f172a] text-base">NGO Employee Directory</h3>
-                  <button
+                  <button 
                     onClick={() => setShowAddEmp(!showAddEmp)}
                     className="flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all cursor-pointer shadow-sm"
                   >
@@ -1363,15 +1367,15 @@ export default function AdminPanel() {
                   <form onSubmit={handleAddEmployee} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs animate-in fade-in duration-200">
                     <div className="flex flex-col space-y-1">
                       <label className="font-semibold text-slate-600">Clerk User ID (or unique handle)</label>
-                      <input
+                      <input 
                         value={newEmpId} onChange={(e) => setNewEmpId(e.target.value)}
                         placeholder="e.g. user_abc123" required
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Email Address</label>
-                      <input
+                      <label className="font-semibold text-slate-600">Email Address</label>
+                      <input 
                         value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)}
                         placeholder="employee@ngo.org" type="email" required
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
@@ -1379,15 +1383,15 @@ export default function AdminPanel() {
                     </div>
                     <div className="flex flex-col space-y-1">
                       <label className="font-semibold text-slate-300">First Name</label>
-                      <input
+                      <input 
                         value={newEmpFirst} onChange={(e) => setNewEmpFirst(e.target.value)}
                         placeholder="First Name"
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
                       />
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <label className="font-semibold text-slate-300">Last Name</label>
-                      <input
+                      <label className="font-semibold text-[#475569]">Last Name</label>
+                      <input 
                         value={newEmpLast} onChange={(e) => setNewEmpLast(e.target.value)}
                         placeholder="Last Name"
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
@@ -1395,7 +1399,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="flex flex-col space-y-1">
                       <label className="font-semibold text-slate-300">Department</label>
-                      <input
+                      <input 
                         value={newEmpDept} onChange={(e) => setNewEmpDept(e.target.value)}
                         placeholder="e.g. Field Ops, Finance"
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669]"
@@ -1403,7 +1407,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="flex flex-col space-y-1">
                       <label className="font-semibold text-slate-300">System Role</label>
-                      <select
+                      <select 
                         value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value as any)}
                         className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                       >
@@ -1465,10 +1469,10 @@ export default function AdminPanel() {
 
           {/* TAB 3: ATTENDANCE HISTORY, PAGINATION & CORRECTIONS */}
           {activeTab === 'attendance' && (
-            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm">
+            <div className="space-y-6 bg-[#ffffff] p-6 rounded-[16px] border border-[#cbd5e1]/60 shadow-sm animate-fade-in">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-[#059669] text-base">Attendance Master Log</h3>
-                <button
+                <button 
                   onClick={() => setShowManualLog(!showManualLog)}
                   className="flex items-center space-x-1 bg-[#059669] hover:bg-[#047857] text-white font-semibold text-xs py-2 px-4 rounded-[5px] transition-all cursor-pointer shadow-sm"
                 >
@@ -1481,8 +1485,8 @@ export default function AdminPanel() {
                 <form onSubmit={handleManualAttendance} className="p-4 bg-[#f8fafc] rounded-[16px] border border-[#cbd5e1] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs animate-in fade-in duration-200">
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Select Employee</label>
-                    <select
-                      value={manualProfileId}
+                    <select 
+                      value={manualProfileId} 
                       onChange={(e) => setManualProfileId(e.target.value)} required
                       className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                     >
@@ -1494,7 +1498,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Status</label>
-                    <select
+                    <select 
                       value={manualStatus} onChange={(e) => setManualStatus(e.target.value)}
                       className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] font-semibold focus:outline-none"
                     >
@@ -1508,7 +1512,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Correction Date</label>
-                    <input
+                    <input 
                       value={attendanceFilterDate} onChange={(e) => setAttendanceFilterDate(e.target.value)}
                       type="date" required
                       className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
@@ -1516,7 +1520,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="md:col-span-3 flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Note / Reason for Entry</label>
-                    <textarea
+                    <textarea 
                       value={manualNotes} onChange={(e) => setManualNotes(e.target.value)}
                       placeholder="e.g. Employee forgot card, internet failure in the field" required
                       className="border border-[#cbd5e1] bg-white p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none"
@@ -1600,14 +1604,14 @@ export default function AdminPanel() {
                         <td className="py-3 text-center space-x-2">
                           <button
                             onClick={() => startEditingRecord(rec)}
-                            className="p-1 text-slate-500 hover:text-[#059669] hover:bg-emerald-50 rounded transition-all inline-flex cursor-pointer"
+                            className="p-1 text-slate-500 hover:text-[#059669] hover:bg-[#f0fdf4] rounded transition-all inline-flex cursor-pointer"
                             title="Edit / Correct record"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteRecord(rec.id)}
-                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-all inline-flex cursor-pointer"
+                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-[#fff5f5] rounded transition-all inline-flex cursor-pointer"
                             title="Delete log permanently"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1637,10 +1641,11 @@ export default function AdminPanel() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${currentPage === pageNum
-                            ? 'bg-[#059669] border-[#059669] text-white shadow-sm'
+                        className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                          currentPage === pageNum 
+                            ? 'bg-[#059669] border-[#059669] text-white shadow-sm' 
                             : 'border-[#cbd5e1] hover:bg-slate-50 text-[#475569]'
-                          }`}
+                        }`}
                       >
                         {pageNum}
                       </button>
@@ -1671,7 +1676,7 @@ export default function AdminPanel() {
                     Review and audit all historical out-of-geofence breaches and late arrivals logged across the organization.
                   </p>
                 </div>
-
+                
                 {/* Filters Row */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center space-x-1 bg-[#f8fafc] border border-[#cbd5e1] rounded-lg p-1.5 text-xs font-semibold text-slate-700">
@@ -1711,15 +1716,16 @@ export default function AdminPanel() {
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-[#cbd5e1]/30 pb-1 pt-2">
                         {dateStr}
                       </h4>
-
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {groupedNotifications[dateStr].map((n: any) => (
-                          <div
-                            key={n.id}
-                            className={`p-4 rounded-xl border flex flex-col justify-between shadow-sm transition-all bg-[#ffffff] ${n.type === 'out_of_geofence'
-                                ? 'border-rose-100 bg-rose-50/20 text-rose-950'
-                                : 'border-amber-100 bg-amber-50/20 text-amber-950'
-                              }`}
+                          <div 
+                            key={n.id} 
+                            className={`p-4 rounded-xl border flex flex-col justify-between shadow-sm transition-all bg-[#ffffff] ${
+                              n.type === 'out_of_geofence' 
+                                ? 'border-rose-100 bg-rose-50/50 text-rose-950' 
+                                : 'border-amber-100 bg-amber-50/50 text-amber-950'
+                            }`}
                           >
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">
@@ -1748,7 +1754,7 @@ export default function AdminPanel() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Office Latitude</label>
-                    <input
+                    <input 
                       value={officeLat} onChange={(e) => setOfficeLat(e.target.value)}
                       placeholder="e.g. 33.6844" type="number" step="any" required
                       className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
@@ -1756,7 +1762,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex flex-col space-y-1">
                     <label className="font-semibold text-slate-600">Office Longitude</label>
-                    <input
+                    <input 
                       value={officeLng} onChange={(e) => setOfficeLng(e.target.value)}
                       placeholder="e.g. 73.0479" type="number" step="any" required
                       className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
@@ -1766,7 +1772,7 @@ export default function AdminPanel() {
 
                 <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-[#0f172a]">Allowable Radius (in Meters)</label>
-                  <input
+                  <input 
                     value={radius} onChange={(e) => setRadius(e.target.value)}
                     placeholder="e.g. 100" type="number" required
                     className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
@@ -1778,7 +1784,7 @@ export default function AdminPanel() {
 
                 <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-[#0f172a]">Official Office Start Time</label>
-                  <input
+                  <input 
                     value={startTime} onChange={(e) => setStartTime(e.target.value)}
                     type="time" step="1" required
                     className="border border-[#cbd5e1] bg-[#f8fafc] p-2.5 rounded-[5px] text-[#0f172a] focus:outline-none focus:ring-1 focus:ring-[#059669] font-mono"
@@ -1802,7 +1808,7 @@ export default function AdminPanel() {
               <p className="text-xs text-[#475569] leading-relaxed">
                 Download structured data logs including timestamps, geofence validations, accuracy levels, and admin corrections compiled cleanly into CSV formats compatible with Excel, Google Sheets, and LibreOffice.
               </p>
-
+              
               <div className="grid grid-cols-1 gap-4 text-xs">
                 {/* Daily export summary row: FIXED CONTRAST TO DEEP SLATE-900 */}
                 <div className="p-4 bg-[#f8fafc] border border-[#cbd5e1] rounded-[16px] flex items-center justify-between shadow-sm">
